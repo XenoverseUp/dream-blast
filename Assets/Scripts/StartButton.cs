@@ -17,6 +17,8 @@ public class StartButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     [SerializeField] private float pressDuration = 0.03f; 
     [SerializeField] private float releaseDuration = 0.1f;
 
+    public LevelLoader levelLoader;
+
     private Button button;
     private TMP_Text textComponent;
     private Vector3 originalScale;
@@ -93,7 +95,7 @@ public class StartButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     }
 
     private void OnButtonClick() {
-        GameManager.Instance.SetActiveScene(ActiveScene.Level);
+        levelLoader.SetActiveScene(ActiveScene.Level);
     }
 
     private void SetText(string text) { textComponent.SetText(text); }
