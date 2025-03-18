@@ -17,17 +17,6 @@ public class LevelLoader : MonoBehaviour {
     [SerializeField] private float transitionDuration = 1.0f;
 
 
-    private void Start() {
-
-    }
-
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     public void SetActiveScene(ActiveScene scene) {
         
         StartCoroutine(this.LoadLevel(scene));
