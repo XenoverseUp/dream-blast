@@ -9,7 +9,7 @@ public class LevelManager : MonoBehaviour {
     private List<IActionListener> listeners = new List<IActionListener>();
     
     private int moveCount = 0;
-    private LevelData currentLevel;
+    private LevelData levelData;
     private Dictionary<string, int> obstacleCountMap = new Dictionary<string, int>();
     private bool loaded = false;
     
@@ -32,15 +32,15 @@ public class LevelManager : MonoBehaviour {
     
     private bool LoadCurrentLevel() {
         int levelNumber = GameManager.Instance.currentLevel;
-        currentLevel = LevelData.LoadLevel(levelNumber);
+        levelData = LevelData.LoadLevel(levelNumber);
         
-        if (currentLevel == null) {
+        if (levelData == null) {
             Debug.LogError($"Failed to load level {levelNumber}");
             return false;
         }
 
-        moveCount = currentLevel.MoveCount;
-        obstacleCountMap = currentLevel.GetObstacleCountMap();
+        moveCount = levelData.MoveCount;
+        obstacleCountMap = levelData.GetObstacleCountMap();
 
         return true;
     }
@@ -70,4 +70,6 @@ public class LevelManager : MonoBehaviour {
     public Dictionary<string, int> GetBlocks() { return this.obstacleCountMap; }
     
     public List<string> GetObstacleTypes() { return new List<string>(obstacleCountMap.Keys); }
+
+    public LevelData GetLevelData() { return this.levelData; }
 }
