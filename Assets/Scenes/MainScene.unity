@@ -179,7 +179,7 @@ MonoBehaviour:
   m_text: Play
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0c355a68b7438446c8ca9a4b08799b06, type: 2}
-  m_sharedMaterial: {fileID: -5388065571033652140, guid: 0c355a68b7438446c8ca9a4b08799b06, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 44d4c8538070b4428b3ff69784aa5c6d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -940,6 +940,10 @@ PrefabInstance:
       value: GameManager
       objectReference: {fileID: 0}
     - target: {fileID: 196546543917025515, guid: 0968d5805a4c74e5c8010cd071eff162, type: 3}
+      propertyPath: currentLevel
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 196546543917025515, guid: 0968d5805a4c74e5c8010cd071eff162, type: 3}
       propertyPath: mainSceneName
       value: Main Menu
       objectReference: {fileID: 0}
@@ -1011,6 +1015,18 @@ PrefabInstance:
     - target: {fileID: 5528542897800675500, guid: e52ee7de208b2496c94e4b38b0004488, type: 3}
       propertyPath: m_SortingOrder
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7508456319664943222, guid: e52ee7de208b2496c94e4b38b0004488, type: 3}
+      propertyPath: mainSceneName
+      value: MainScene
+      objectReference: {fileID: 0}
+    - target: {fileID: 7508456319664943222, guid: e52ee7de208b2496c94e4b38b0004488, type: 3}
+      propertyPath: levelSceneName
+      value: LevelScene
+      objectReference: {fileID: 0}
+    - target: {fileID: 7508456319664943222, guid: e52ee7de208b2496c94e4b38b0004488, type: 3}
+      propertyPath: transitionDuration
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 7758536657207529589, guid: e52ee7de208b2496c94e4b38b0004488, type: 3}
       propertyPath: m_Name

@@ -16,15 +16,9 @@ public class LevelLoader : MonoBehaviour {
     [SerializeField] private Animator animator;
     [SerializeField] private float transitionDuration = 1.0f;
 
-  
 
+    private void Start() {
 
-
-    private void Awake() {
-        Debug.Assert(
-            mainSceneName == null || levelSceneName == null, 
-            $"Please provide the scene names."
-        );
     }
 
 
