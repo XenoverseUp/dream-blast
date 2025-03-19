@@ -245,6 +245,8 @@ MonoBehaviour:
   stoneSprite: {fileID: 5725184139431673129, guid: c2035a099c8ff4961a4163627ed2725d, type: 3}
   vaseSprite: {fileID: -4678962038349899921, guid: e1f640aa7136c4249b6323156ce2bb7d, type: 3}
   damagedVaseSprite: {fileID: -1432975368721100300, guid: e235657590fb94973b8f7dae2e90fcef, type: 3}
+  particleSystemPrefab: {fileID: 2050173267387083538, guid: 5694dcc3a5b334666abf46596013fbcb, type: 3}
+  padding: 0.12
 --- !u!1 &294329763
 GameObject:
   m_ObjectHideFlags: 0
@@ -1045,7 +1047,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 196546543917025515, guid: 0968d5805a4c74e5c8010cd071eff162, type: 3}
       propertyPath: currentLevel
-      value: 8
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 3726604621445658932, guid: 0968d5805a4c74e5c8010cd071eff162, type: 3}
       propertyPath: m_LocalPosition.x

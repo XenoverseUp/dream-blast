@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 public class CellItem : MonoBehaviour {
@@ -10,12 +9,23 @@ public class CellItem : MonoBehaviour {
     private SpriteRenderer spriteRenderer;
     private Sprite originalSprite;
     private Sprite damagedSprite;
+    private Board board;
     
     public int X { get => x; }
     public int Y { get => y; }
     
     private void Awake() {
         spriteRenderer = GetComponent<SpriteRenderer>();
+    }
+    
+    private void Start() {
+        board = GetComponentInParent<Board>();
+        
+        BoxCollider2D collider = GetComponent<BoxCollider2D>();
+        if (collider == null) collider = gameObject.AddComponent<BoxCollider2D>();
+        
+        collider.size = new Vector2(1f, 1.15f);
+        collider.offset = new Vector2(0f, -0.15f);
     }
     
     public void Initialize(CellItemType type, int x, int y, Sprite sprite) {
@@ -74,5 +84,9 @@ public class CellItem : MonoBehaviour {
             
             return false;
         }
+    }
+    
+    private void OnMouseDown() {
+        if (board != null && !this.IsObstacle()) board.TryBlast(x, y);
     }
 }
