@@ -245,6 +245,10 @@ MonoBehaviour:
   stoneSprite: {fileID: 5725184139431673129, guid: c2035a099c8ff4961a4163627ed2725d, type: 3}
   vaseSprite: {fileID: -4678962038349899921, guid: e1f640aa7136c4249b6323156ce2bb7d, type: 3}
   damagedVaseSprite: {fileID: -1432975368721100300, guid: e235657590fb94973b8f7dae2e90fcef, type: 3}
+  redCrack: {fileID: 8635282560227039426, guid: 221f2bd2003bd4bc68681e03896e40a0, type: 3}
+  greenCrack: {fileID: 3823634399010047068, guid: 4d79a16b8c21742399b97c5c7113faef, type: 3}
+  blueCrack: {fileID: -600494540707355758, guid: fb4a28af2582e4d2996415c5f6d73207, type: 3}
+  yellowCrack: {fileID: 6910005400417552955, guid: 8d97efc860b9443aebfcd8b93a51f00d, type: 3}
   particleSystemPrefab: {fileID: 2050173267387083538, guid: 5694dcc3a5b334666abf46596013fbcb, type: 3}
   padding: 0.12
 --- !u!1 &294329763
@@ -1047,19 +1051,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 196546543917025515, guid: 0968d5805a4c74e5c8010cd071eff162, type: 3}
       propertyPath: currentLevel
-      value: 4
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 3726604621445658932, guid: 0968d5805a4c74e5c8010cd071eff162, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 91.38589
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3726604621445658932, guid: 0968d5805a4c74e5c8010cd071eff162, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 231.14827
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3726604621445658932, guid: 0968d5805a4c74e5c8010cd071eff162, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.44361308
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3726604621445658932, guid: 0968d5805a4c74e5c8010cd071eff162, type: 3}
       propertyPath: m_LocalRotation.w

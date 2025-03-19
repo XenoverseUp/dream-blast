@@ -29,7 +29,6 @@ public class LevelManager : MonoBehaviour {
         Notify();
     }
     
-    
     private bool LoadCurrentLevel() {
         int levelNumber = GameManager.Instance.currentLevel;
         levelData = LevelData.LoadLevel(levelNumber);
@@ -72,4 +71,9 @@ public class LevelManager : MonoBehaviour {
     public List<string> GetObstacleTypes() { return new List<string>(obstacleCountMap.Keys); }
 
     public LevelData GetLevelData() { return this.levelData; }
+
+    public void SpendMove() {
+        this.moveCount -= 1;
+        Notify();
+    }
 }

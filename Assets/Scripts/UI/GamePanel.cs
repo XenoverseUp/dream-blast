@@ -3,19 +3,33 @@ using UnityEngine.UI;
 
 public class GamePanel : MonoBehaviour {
     [SerializeField] private Sprite boardSprite;   
+
+    [Header("Block Sprites")]
     [SerializeField] private Sprite redCubeSprite;
     [SerializeField] private Sprite greenCubeSprite;
     [SerializeField] private Sprite blueCubeSprite;
     [SerializeField] private Sprite yellowCubeSprite;
+
+    [Header("Artifact Sprites")]
     [SerializeField] private Sprite horizontalRocketSprite;
     [SerializeField] private Sprite verticalRocketSprite;
+
+    [Header("Obstacle Sprites")]
     [SerializeField] private Sprite boxSprite;
     [SerializeField] private Sprite stoneSprite;
     [SerializeField] private Sprite vaseSprite;
     [SerializeField] private Sprite damagedVaseSprite;
 
+    [Header("Block Cracks")]
+    [SerializeField] private Sprite redCrack;
+    [SerializeField] private Sprite greenCrack;
+    [SerializeField] private Sprite blueCrack;
+    [SerializeField] private Sprite yellowCrack;
+
+    [Header("Effects")]
     [SerializeField] private GameObject particleSystemPrefab;
 
+    [Header("Layout")]
     [SerializeField] private float padding = 0.12f; // Padding percentage
 
     private int gridWidth, gridHeight;
@@ -84,7 +98,7 @@ public class GamePanel : MonoBehaviour {
         
         Board boardScript = boardPanel.AddComponent<Board>();
         
-        boardScript.SetSprites(
+        boardScript.SetBlockSprites(
             redCubeSprite,
             greenCubeSprite,
             blueCubeSprite,
@@ -96,8 +110,14 @@ public class GamePanel : MonoBehaviour {
             vaseSprite,
             damagedVaseSprite
         );
+
+        boardScript.SetCrackSprites(
+            redCrack, 
+            greenCrack, 
+            blueCrack,
+            yellowCrack
+        );
         
-        // Pass the particle system prefab to the board
         if (particleSystemPrefab != null) {
             boardScript.SetParticleSystemPrefab(particleSystemPrefab);
         }

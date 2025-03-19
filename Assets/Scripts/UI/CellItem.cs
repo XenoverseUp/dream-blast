@@ -1,5 +1,18 @@
 using UnityEngine;
 
+public enum CellItemType {
+    Empty,
+    RedCube,
+    GreenCube,
+    BlueCube,
+    YellowCube,
+    HorizontalRocket,
+    VerticalRocket,
+    Box,
+    Stone,
+    Vase
+}
+
 public class CellItem : MonoBehaviour {
     private CellItemType type;
     private int x;

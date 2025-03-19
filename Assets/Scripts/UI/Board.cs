@@ -1,38 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Cell {
-    private int x;
-    private int y;
-    private CellItem item;
-    
-    public Cell(int x, int y) {
-        this.x = x;
-        this.y = y;
-        this.item = null;
-    }
-    
-    public bool IsEmpty() {
-        return item == null;
-    }
-    
-    public CellItem GetItem() { return item; }
-    public void SetItem(CellItem item) { this.item = item; }
-    public void Clear() { this.item = null; }
-}
-
-public enum CellItemType {
-    Empty,
-    RedCube,
-    GreenCube,
-    BlueCube,
-    YellowCube,
-    HorizontalRocket,
-    VerticalRocket,
-    Box,
-    Stone,
-    Vase
-}
 
 public class Board : MonoBehaviour {
     private GameObject particleSystemPrefab;
@@ -47,18 +15,18 @@ public class Board : MonoBehaviour {
     private Sprite stoneSprite;
     private Sprite vaseSprite;
     private Sprite damagedVaseSprite;
+
+    private Sprite blueCrack;
+    private Sprite redCrack;
+    private Sprite yellowCrack;
+    private Sprite greenCrack;
     
     private int gridWidth;
     private int gridHeight;
     private float cellSize;
     private Cell[,] grid;
-    private RectTransform rectTransform;
     
-    private void Awake() {
-        rectTransform = GetComponent<RectTransform>();
-    }
-    
-    public void SetSprites(
+    public void SetBlockSprites(
         Sprite redCube, 
         Sprite greenCube, 
         Sprite blueCube, 
@@ -80,6 +48,13 @@ public class Board : MonoBehaviour {
         this.stoneSprite = stone;
         this.vaseSprite = vase;
         this.damagedVaseSprite = damagedVase;
+    }
+    
+    public void SetCrackSprites(Sprite redCrack, Sprite greenCrack, Sprite blueCrack, Sprite yellowCrack) {
+        this.redCrack = redCrack;
+        this.greenCrack = greenCrack;
+        this.blueCrack = blueCrack;
+        this.yellowCrack = yellowCrack;
     }
     
     public void SetParticleSystemPrefab(GameObject prefab) {
@@ -188,9 +163,7 @@ public class Board : MonoBehaviour {
         CellItem itemComponent = item.AddComponent<CellItem>();
         itemComponent.Initialize(type, x, y, sprite);
         
-        if (type == CellItemType.Vase) {
-            itemComponent.SetDamagedSprite(damagedVaseSprite);
-        }
+        if (type == CellItemType.Vase) itemComponent.SetDamagedSprite(damagedVaseSprite);
         
         grid[x, y].SetItem(itemComponent);
     }
@@ -224,23 +197,121 @@ public class Board : MonoBehaviour {
         }
         
         CellItem item = grid[x, y].GetItem();
-        Debug.Log($"TryBlast at position: X={x}, Y={y}, Type={item.GetItemType()}");
+
+        if (item.IsObstacle()) return false;
+
         
-        Vector3 position = GetWorldPosition(x, y);
-        InstantiateParticleSystem(position);
+        if (item.IsCube()) {
+            CellItemType itemType = item.GetItemType();
+            HashSet<Vector2Int> connectedCubes = FindConnectedCubes(x, y, itemType);
+            
+            if (connectedCubes.Count < 2) {
+                Debug.Log("Not enough connected cubes to blast");
+                return false;
+            }
+            
+            HashSet<Vector2Int> affectedObstacles = new HashSet<Vector2Int>();
+            foreach (Vector2Int cubePos in connectedCubes) {
+                CheckAndDamageAdjacentObstacles(cubePos.x, cubePos.y, affectedObstacles);
+                
+                Vector3 position = GetWorldPosition(cubePos.x, cubePos.y);
+                InstantiateParticleSystem(position, itemType);
+            }
+            
+            foreach (Vector2Int cubePos in connectedCubes) RemoveItem(cubePos.x, cubePos.y);
+            LevelManager.Instance.SpendMove();
+            
+            return true;
+        } else if (item.IsRocket()) {
+            Debug.Log("Rocket clicked, but rocket functionality is disabled");
+            return false;
+        }
         
-        // RemoveItem(x, y);
-        
-        return true;
+        return false;
     }
 
-    private void InstantiateParticleSystem(Vector3 position) {
+
+    private HashSet<Vector2Int> FindConnectedCubes(int startX, int startY, CellItemType targetType) {
+        HashSet<Vector2Int> connectedCubes = new HashSet<Vector2Int>();
+        Queue<Vector2Int> queue = new Queue<Vector2Int>();
+        
+        Vector2Int startPos = new Vector2Int(startX, startY);
+        queue.Enqueue(startPos);
+        connectedCubes.Add(startPos);
+        
+        Vector2Int[] directions = new Vector2Int[] {
+            new(0, 1),
+            new(1, 0),
+            new(0, -1),
+            new(-1, 0)
+        };
+        
+        while (queue.Count > 0) {
+            Vector2Int current = queue.Dequeue();
+            
+            foreach (var dir in directions) {
+                int newX = current.x + dir.x;
+                int newY = current.y + dir.y;
+                
+                if (newX >= 0 && newX < gridWidth && newY >= 0 && newY < gridHeight) {
+                    Vector2Int newPos = new Vector2Int(newX, newY);
+                    if (!connectedCubes.Contains(newPos) && !grid[newX, newY].IsEmpty()) {
+                        CellItem adjacentItem = grid[newX, newY].GetItem();
+                        if (adjacentItem.GetItemType() == targetType) {
+                            connectedCubes.Add(newPos);
+                            queue.Enqueue(newPos);
+                        }
+                    }
+                }
+            }
+        }
+        
+        return connectedCubes;
+    }
+
+    private void CheckAndDamageAdjacentObstacles(int x, int y, HashSet<Vector2Int> processedObstacles) {
+        Vector2Int[] directions = new Vector2Int[] {
+            new(0, 1),
+            new(1, 0),
+            new(0, -1),
+            new(-1, 0)
+        };
+        
+        foreach (var dir in directions) {
+            int newX = x + dir.x;
+            int newY = y + dir.y;
+            
+            if (newX >= 0 && newX < gridWidth && newY >= 0 && newY < gridHeight) {
+                Vector2Int obstaclePos = new Vector2Int(newX, newY);
+                
+                if (processedObstacles.Contains(obstaclePos)) continue;
+                
+                if (!grid[newX, newY].IsEmpty()) {
+                    CellItem adjacentItem = grid[newX, newY].GetItem();
+                    
+                    if (adjacentItem.IsObstacle()) {
+                        if (adjacentItem.GetItemType() == CellItemType.Stone) continue;
+                        
+                        processedObstacles.Add(obstaclePos);
+                        
+                        bool destroyed = adjacentItem.TakeDamage();
+                        if (destroyed) RemoveItem(newX, newY);
+                    }
+                }
+            }
+        }
+    }
+
+    private void InstantiateParticleSystem(Vector3 position, CellItemType itemType) {
         GameObject particleInstance = Instantiate(particleSystemPrefab, position, Quaternion.identity);
         
         ParticleSystem particleSystem = particleInstance.GetComponent<ParticleSystem>();
 
-        
         if (particleSystem != null) {
+            Sprite crackSprite = GetCrackSpriteForItemType(itemType);
+            ParticleSystemRenderer renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
+            renderer.material.mainTexture = crackSprite.texture;
+        
             particleSystem.Play();
             
             float totalDuration = particleSystem.main.duration + particleSystem.main.startLifetime.constantMax;
@@ -249,6 +320,16 @@ public class Board : MonoBehaviour {
             Debug.LogWarning("Particle system component not found on prefab");
             Destroy(particleInstance, 2f);
         }
+    }
+    
+    private Sprite GetCrackSpriteForItemType(CellItemType itemType) {
+        return itemType switch {
+            CellItemType.RedCube => redCrack,
+            CellItemType.GreenCube => greenCrack,
+            CellItemType.BlueCube => blueCrack,
+            CellItemType.YellowCube => yellowCrack,
+            _ => blueCrack,
+        };
     }
 
     private void RemoveItem(int x, int y) {
