@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Board : MonoBehaviour {
     private GameObject particleSystemPrefab;
+
+    /* Game Sprites */
     
     private Sprite redCubeSprite;
     private Sprite greenCubeSprite;
@@ -20,6 +22,7 @@ public class Board : MonoBehaviour {
     private Sprite redCrack;
     private Sprite yellowCrack;
     private Sprite greenCrack;
+
     
     private int gridWidth;
     private int gridHeight;
@@ -27,6 +30,8 @@ public class Board : MonoBehaviour {
     private CellItem[,] grid;
     
     private bool isFalling = false;
+
+    /* Setters and Initializers */
     
     public void SetBlockSprites(
         Sprite redCube, 
@@ -72,6 +77,8 @@ public class Board : MonoBehaviour {
         InitializeGrid();
         PopulateGrid(LevelManager.Instance.GetLevelData().Grid);
     }
+
+    /* Grid Actions */
     
     private void InitializeGrid() {
         grid = new CellItem[this.gridWidth, this.gridHeight];
@@ -90,6 +97,14 @@ public class Board : MonoBehaviour {
             
             string itemType = levelGrid[i];
             SpawnItemFromType(x, y, itemType);
+        }
+    }
+
+    private void RemoveItem(int x, int y) {
+        if (grid[x, y] != null) {
+            CellItem item = grid[x, y];
+            Destroy(item.gameObject);
+            grid[x, y] = null;
         }
     }
 
@@ -171,28 +186,8 @@ public class Board : MonoBehaviour {
         
         grid[x, y] = itemComponent;
     }
-    
-    private void ScaleSpriteToFit(GameObject item, Sprite sprite, float targetSize) {
-        if (sprite == null) return;
-        
-        float spriteWidth = sprite.bounds.size.x;
-        float scale = targetSize / spriteWidth;
 
-        item.transform.localScale = new Vector3(scale, scale, 1f);
-    }
-
-    public Vector3 GetLocalPosition(int x, int y) {
-        return new Vector3(
-            (x * cellSize) + (cellSize / 2) - (gridWidth * cellSize / 2),       // x
-            (y * cellSize) + (cellSize / 2) - (gridHeight * cellSize / 2) - 2f, // y
-            0f                                                                  // z
-        );
-    }
-    
-    public Vector3 GetWorldPosition(int x, int y) {
-        Vector3 localPos = GetLocalPosition(x, y);    
-        return transform.TransformPoint(localPos);
-    }
+    /* Blasting Mechanic */
     
     public bool TryBlast(int x, int y) {
         if (isFalling) {
@@ -246,6 +241,8 @@ public class Board : MonoBehaviour {
         
         return false;
     }
+
+    /* Animations & New Block Spawning */
 
     private IEnumerator ProcessFallingItemsAfterDelay(float delay) {
         yield return new WaitForSeconds(delay);
@@ -383,6 +380,100 @@ public class Board : MonoBehaviour {
         
     }
     
+    
+    private IEnumerator AnimateNewCubeFall(GameObject item, CellItem itemComponent, Vector3 startPos, Vector3 targetPos) {
+        if (item == null) yield return null; 
+
+        SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
+        if (renderer != null) 
+            renderer.sortingOrder = itemComponent.Y + 1;
+       
+        float speed = AnimationManager.Instance.blockFallSpeed;
+        float distance = Vector3.Distance(startPos, targetPos);
+        float duration = distance / speed;
+        
+        float elapsedTime = 0f;
+        while (elapsedTime < duration) {
+            
+            float t = elapsedTime / duration;
+            item.transform.position = AnimationManager.Instance.LerpWithoutClamp(startPos, targetPos, AnimationManager.Instance.EaseOutBack(t));
+            
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        item.transform.position = targetPos;
+        
+       
+    }
+
+    private void CheckAndDamageAdjacentObstacles(int x, int y, HashSet<Vector2Int> processedObstacles) {
+        Vector2Int[] directions = new Vector2Int[] {
+            new(0, 1),
+            new(1, 0),
+            new(0, -1),
+            new(-1, 0)
+        };
+        
+        foreach (var dir in directions) {
+            int newX = x + dir.x;
+            int newY = y + dir.y;
+            
+            if (newX >= 0 && newX < gridWidth && newY >= 0 && newY < gridHeight) {
+                Vector2Int obstaclePos = new Vector2Int(newX, newY);
+                
+                if (processedObstacles.Contains(obstaclePos)) continue;
+                
+                if (grid[newX, newY] != null) {
+                    CellItem adjacentItem = grid[newX, newY];
+                    
+                    if (adjacentItem.IsObstacle()) {
+                        if (adjacentItem.GetItemType() == CellItemType.Stone) continue;
+                        
+                        processedObstacles.Add(obstaclePos);
+                        
+                        bool destroyed = adjacentItem.TakeDamage();
+                        if (destroyed) RemoveItem(newX, newY);
+                    }
+                }
+            }
+        }
+    }
+
+
+    private void OnDestroy() {
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                if (grid[x, y] != null) {
+                    Destroy(grid[x, y].gameObject);
+                }
+            }
+        }
+    }
+
+    /* Helpers */
+
+    private void ScaleSpriteToFit(GameObject item, Sprite sprite, float targetSize) {
+        if (sprite == null) return;
+        
+        float spriteWidth = sprite.bounds.size.x;
+        float scale = targetSize / spriteWidth;
+
+        item.transform.localScale = new Vector3(scale, scale, 1f);
+    }
+
+    public Vector3 GetLocalPosition(int x, int y) {
+        return new Vector3(
+            (x * cellSize) + (cellSize / 2) - (gridWidth * cellSize / 2),       // x
+            (y * cellSize) + (cellSize / 2) - (gridHeight * cellSize / 2) - 2f, // y
+            0f                                                                  // z
+        );
+    }
+    
+    public Vector3 GetWorldPosition(int x, int y) {
+        Vector3 localPos = GetLocalPosition(x, y);    
+        return transform.TransformPoint(localPos);
+    }
 
     private List<int> FindEmptyCellsToFill(int x) {
         List<int> emptyCells = new List<int>();
@@ -412,34 +503,7 @@ public class Board : MonoBehaviour {
         
         return emptyCells;
     }
-    
-    private IEnumerator AnimateNewCubeFall(GameObject item, CellItem itemComponent, Vector3 startPos, Vector3 targetPos) {
-        if (item == null) yield return null; 
 
-        SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
-        if (renderer != null) 
-            renderer.sortingOrder = itemComponent.Y + 1;
-       
-        float speed = AnimationManager.Instance.blockFallSpeed;
-        float distance = Vector3.Distance(startPos, targetPos);
-        float duration = distance / speed;
-        
-        float elapsedTime = 0f;
-        while (elapsedTime < duration) {
-            
-            float t = elapsedTime / duration;
-            item.transform.position = AnimationManager.Instance.LerpWithoutClamp(startPos, targetPos, AnimationManager.Instance.EaseOutBack(t));
-            
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        item.transform.position = targetPos;
-        
-       
-    }
-
-    
     private int FindFirstFallableItemAbove(int x, int emptyY) {
         for (int checkY = emptyY + 1; checkY < gridHeight; checkY++) {
             if (grid[x, checkY] == null) 
@@ -456,7 +520,33 @@ public class Board : MonoBehaviour {
         
         return -1; // No item found that can fall
     }
-    
+
+    private Sprite GetCrackSpriteForItemType(CellItemType itemType) {
+        return itemType switch {
+            CellItemType.RedCube => redCrack,
+            CellItemType.GreenCube => greenCrack,
+            CellItemType.BlueCube => blueCrack,
+            CellItemType.YellowCube => yellowCrack,
+            _ => blueCrack,
+        };
+    }
+
+    private (int box, int stone, int vase) GetObstacleCount() {
+        int box = 0, stone = 0, vase = 0;
+
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                CellItem item = grid[x, y];
+                if (item == null || !item.IsObstacle()) continue;
+
+                if (item.GetItemType() == CellItemType.Box) box += 1;
+                else if (item.GetItemType() == CellItemType.Stone) stone += 1;
+                else if (item.GetItemType() == CellItemType.Vase) vase += 1;
+            }
+        }
+
+        return (box, stone, vase);
+    }
 
     private HashSet<CellItem> FindConnectedCells(int startX, int startY, CellItemType targetType) {
         HashSet<CellItem> connectedCubes = new HashSet<CellItem>();
@@ -499,83 +589,5 @@ public class Board : MonoBehaviour {
         }
         
         return connectedCubes;
-    }
-
-    private void CheckAndDamageAdjacentObstacles(int x, int y, HashSet<Vector2Int> processedObstacles) {
-        Vector2Int[] directions = new Vector2Int[] {
-            new(0, 1),
-            new(1, 0),
-            new(0, -1),
-            new(-1, 0)
-        };
-        
-        foreach (var dir in directions) {
-            int newX = x + dir.x;
-            int newY = y + dir.y;
-            
-            if (newX >= 0 && newX < gridWidth && newY >= 0 && newY < gridHeight) {
-                Vector2Int obstaclePos = new Vector2Int(newX, newY);
-                
-                if (processedObstacles.Contains(obstaclePos)) continue;
-                
-                if (grid[newX, newY] != null) {
-                    CellItem adjacentItem = grid[newX, newY];
-                    
-                    if (adjacentItem.IsObstacle()) {
-                        if (adjacentItem.GetItemType() == CellItemType.Stone) continue;
-                        
-                        processedObstacles.Add(obstaclePos);
-                        
-                        bool destroyed = adjacentItem.TakeDamage();
-                        if (destroyed) RemoveItem(newX, newY);
-                    }
-                }
-            }
-        }
-    }
-    
-    private Sprite GetCrackSpriteForItemType(CellItemType itemType) {
-        return itemType switch {
-            CellItemType.RedCube => redCrack,
-            CellItemType.GreenCube => greenCrack,
-            CellItemType.BlueCube => blueCrack,
-            CellItemType.YellowCube => yellowCrack,
-            _ => blueCrack,
-        };
-    }
-
-    private (int box, int stone, int vase) GetObstacleCount() {
-        int box = 0, stone = 0, vase = 0;
-
-        for (int x = 0; x < gridWidth; x++) {
-            for (int y = 0; y < gridHeight; y++) {
-                CellItem item = grid[x, y];
-                if (item == null || !item.IsObstacle()) continue;
-
-                if (item.GetItemType() == CellItemType.Box) box += 1;
-                else if (item.GetItemType() == CellItemType.Stone) stone += 1;
-                else if (item.GetItemType() == CellItemType.Vase) vase += 1;
-            }
-        }
-
-        return (box, stone, vase);
-    }
-
-    private void RemoveItem(int x, int y) {
-        if (grid[x, y] != null) {
-            CellItem item = grid[x, y];
-            Destroy(item.gameObject);
-            grid[x, y] = null;
-        }
-    }
-
-    private void OnDestroy() {
-        for (int x = 0; x < gridWidth; x++) {
-            for (int y = 0; y < gridHeight; y++) {
-                if (grid[x, y] != null) {
-                    Destroy(grid[x, y].gameObject);
-                }
-            }
-        }
     }
 }

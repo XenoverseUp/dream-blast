@@ -10,15 +10,21 @@ public class GamePanel : MonoBehaviour {
     [SerializeField] private Sprite blueCubeSprite;
     [SerializeField] private Sprite yellowCubeSprite;
 
-    [Header("Artifact Sprites")]
-    [SerializeField] private Sprite horizontalRocketSprite;
-    [SerializeField] private Sprite verticalRocketSprite;
-
     [Header("Obstacle Sprites")]
     [SerializeField] private Sprite boxSprite;
     [SerializeField] private Sprite stoneSprite;
     [SerializeField] private Sprite vaseSprite;
     [SerializeField] private Sprite damagedVaseSprite;
+
+    [Header("Artifact Forming Block Sprites")]
+    [SerializeField] private Sprite redCubeRocketSprite;
+    [SerializeField] private Sprite greenCubeRocketSprite;
+    [SerializeField] private Sprite blueCubeRocketSprite;
+    [SerializeField] private Sprite yellowCubeRocketSprite;
+
+    [Header("Artifact Sprites")]
+    [SerializeField] private Sprite horizontalRocketSprite;
+    [SerializeField] private Sprite verticalRocketSprite;
 
     [Header("Block Cracks")]
     [SerializeField] private Sprite redCrack;
