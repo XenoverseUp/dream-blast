@@ -118,31 +118,36 @@ public class Board : MonoBehaviour {
         CellItemType type = CellItemType.Empty;
         Sprite sprite = null;
         Sprite crackSprite = null;
+        Sprite rocketStateSprite = null;
         
         switch (itemType) {
             case "r":
                 sprite = redCubeSprite;
                 type = CellItemType.RedCube;
                 crackSprite = redCrack;
+                rocketStateSprite = redCubeRocketSprite;
                 break;
             case "g":
                 sprite = greenCubeSprite;
                 type = CellItemType.GreenCube;
                 crackSprite = greenCrack;
+                rocketStateSprite = greenCubeRocketSprite;
                 break;
             case "b":
                 sprite = blueCubeSprite;
                 type = CellItemType.BlueCube;
                 crackSprite = blueCrack;
+                rocketStateSprite = blueCubeRocketSprite;
                 break;
             case "y":
                 sprite = yellowCubeSprite;
                 type = CellItemType.YellowCube;
                 crackSprite = yellowCrack;
+                rocketStateSprite = yellowCubeRocketSprite;
                 break;
             case "rand":
                 string[] colors = { "r", "g", "b", "y" };
-                SpawnItemFromType(x, y, colors[UnityEngine.Random.Range(0, colors.Length)]);
+                SpawnItemFromType(x, y, colors[Random.Range(0, colors.Length)]);
                 return;
             case "vro":
                 sprite = verticalRocketSprite;
@@ -168,10 +173,10 @@ public class Board : MonoBehaviour {
                 return; // Empty cell
         }
         
-        SpawnItem(x, y, type, sprite, crackSprite);
+        SpawnItem(x, y, type, sprite, crackSprite, rocketStateSprite);
     }
     
-    public void SpawnItem(int x, int y, CellItemType type, Sprite sprite, Sprite crackSprite) {
+    public void SpawnItem(int x, int y, CellItemType type, Sprite sprite, Sprite crackSprite, Sprite rocketStateSprite) {
         if (type == CellItemType.Empty) return;
 
         Vector3 position = this.GetLocalPosition(x, y);
@@ -197,6 +202,8 @@ public class Board : MonoBehaviour {
         if (type == CellItemType.Vase) itemComponent.SetDamagedSprite(damagedVaseSprite);
         
         itemComponent.Initialize(type, x, y);
+
+        if (itemComponent.IsCube()) itemComponent.SetRocketStateSprite(rocketStateSprite);
         
         grid[x, y] = itemComponent;
     }
@@ -262,6 +269,8 @@ public class Board : MonoBehaviour {
         isFalling = true;
         yield return StartCoroutine(ProcessFallingItems());
         isFalling = false;
+
+        RenderRocketSprites();
     }
     
     
@@ -271,8 +280,8 @@ public class Board : MonoBehaviour {
         do {
             itemsMoved = false;
             
-            for (int y = 0; y < gridHeight - 1; y++) {
-                for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight - 1; y++) 
+                for (int x = 0; x < gridWidth; x++) 
                     if (grid[x, y] == null) {
                         int targetY = FindFirstFallableItemAbove(x, y);
                         if (targetY > y) {
@@ -280,8 +289,8 @@ public class Board : MonoBehaviour {
                             itemsMoved = true;
                         }
                     }
-                }
-            }
+                
+            
             
             yield return new WaitForSeconds(0.2f);
             
@@ -458,6 +467,18 @@ public class Board : MonoBehaviour {
                 }
             }
         }
+    }
+
+    private void RenderRocketSprites() {
+        HashSet<Vector2Int> visitedPositions = new HashSet<Vector2Int>();
+
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y  < gridHeight; y++) {
+                // Get FindConnectedells, render them as rocket or normal
+                // Push them to visited.
+            }
+        }
+
     }
 
 

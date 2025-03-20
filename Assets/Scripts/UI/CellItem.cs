@@ -62,7 +62,6 @@ public class CellItem : MonoBehaviour {
     }
 
     public void SetRocketStateSprite(Sprite rocketStateSprite) {
-        if (this.IsObstacle()) return;
         this.rocketStateSprite = rocketStateSprite;
     }
     
@@ -101,6 +100,10 @@ public class CellItem : MonoBehaviour {
         return false;
     }
     
+    public void RenderOriginalSprite() {
+        if (IsObstacle()) return;
+        spriteRenderer.sprite = rocketStateSprite;
+    }
 
     public void RenderRocketSprite() {
         if (IsObstacle()) return;
