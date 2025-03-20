@@ -17,7 +17,7 @@ public class CellItem : MonoBehaviour {
     private CellItemType type;
     private int x;
     private int y;
-    private int health = 1; 
+    private int health; 
     
     private SpriteRenderer spriteRenderer;
     private Sprite originalSprite;
@@ -37,8 +37,7 @@ public class CellItem : MonoBehaviour {
     private void Start() {
         board = GetComponentInParent<Board>();
         
-        BoxCollider2D collider = GetComponent<BoxCollider2D>();
-        if (collider == null) collider = gameObject.AddComponent<BoxCollider2D>();
+        BoxCollider2D collider = gameObject.AddComponent<BoxCollider2D>();
         
         collider.size = new Vector2(1f, 1.15f);
         collider.offset = new Vector2(0f, -0.15f);
@@ -51,10 +50,17 @@ public class CellItem : MonoBehaviour {
         this.originalSprite = sprite;
         this.particleSystemPrefab = particleSystemPrefab;
         this.crack = crack;
+        this.health = type == CellItemType.Vase ? 2 : 1;
         
-        if (type == CellItemType.Vase) {
-            health = 2;
+        
+        if (spriteRenderer != null && sprite != null) {
+            spriteRenderer.sprite = sprite;
         }
+    }
+    
+    public void Initialize(CellItemType type, int x, int y, Sprite sprite, GameObject particleSystemPrefab, Sprite crack, Sprite damagedSprite) {
+        Initialize(type, x, y, sprite, particleSystemPrefab, crack);
+        this.damagedSprite = damagedSprite;
     }
     
     public void SetDamagedSprite(Sprite damagedSprite) {
@@ -97,7 +103,7 @@ public class CellItem : MonoBehaviour {
         
         if (health <= 0) return true;
         else {
-            if (type == CellItemType.Vase && damagedSprite != null) 
+            if (type == CellItemType.Vase && damagedSprite != null && spriteRenderer != null) 
                 spriteRenderer.sprite = damagedSprite;
             
             return false;

@@ -108,9 +108,12 @@ public class GamePanel : MonoBehaviour {
             redCubeSprite,
             greenCubeSprite,
             blueCubeSprite,
-            yellowCubeSprite,
-            horizontalRocketSprite,
-            verticalRocketSprite,
+            yellowCubeSprite
+        );
+
+        boardScript.SetArtifactSprites(horizontalRocketSprite, verticalRocketSprite);
+
+        boardScript.SetObstacleSprites(
             boxSprite,
             stoneSprite,
             vaseSprite,
@@ -123,10 +126,8 @@ public class GamePanel : MonoBehaviour {
             blueCrack,
             yellowCrack
         );
-        
-        if (particleSystemPrefab != null) {
-            boardScript.SetParticleSystemPrefab(particleSystemPrefab);
-        }
+    
+        boardScript.SetParticleSystemPrefab(particleSystemPrefab);
 
         boardScript.Initialize(cellSize);
     }

@@ -7,23 +7,28 @@ public class Board : MonoBehaviour {
 
     /* Game Sprites */
     
-    private Sprite redCubeSprite;
-    private Sprite greenCubeSprite;
-    private Sprite blueCubeSprite;
-    private Sprite yellowCubeSprite;
-    private Sprite horizontalRocketSprite;
-    private Sprite verticalRocketSprite;
-    private Sprite boxSprite;
-    private Sprite stoneSprite;
-    private Sprite vaseSprite;
-    private Sprite damagedVaseSprite;
+    private Sprite redCubeSprite,
+        greenCubeSprite,
+        blueCubeSprite,
+        yellowCubeSprite;
 
-    private Sprite blueCrack;
-    private Sprite redCrack;
-    private Sprite yellowCrack;
-    private Sprite greenCrack;
+    private Sprite horizontalRocketSprite, verticalRocketSprite;
 
-    
+    private Sprite boxSprite,
+        stoneSprite,
+        vaseSprite,
+        damagedVaseSprite;
+
+    private Sprite blueCrack,
+        redCrack,
+        yellowCrack,
+        greenCrack;
+
+    private Sprite redCubeRocketSprite,
+        greenCubeRocketSprite,
+        blueCubeRocketSprite,
+        yellowCubeRocketSprite;
+
     private int gridWidth;
     private int gridHeight;
     private float cellSize;
@@ -37,20 +42,16 @@ public class Board : MonoBehaviour {
         Sprite redCube, 
         Sprite greenCube, 
         Sprite blueCube, 
-        Sprite yellowCube,
-        Sprite horizontalRocket,
-        Sprite verticalRocket,
-        Sprite box,
-        Sprite stone,
-        Sprite vase,
-        Sprite damagedVase) {
+        Sprite yellowCube
+    ) {
         
         this.redCubeSprite = redCube;
         this.greenCubeSprite = greenCube;
         this.blueCubeSprite = blueCube;
         this.yellowCubeSprite = yellowCube;
-        this.horizontalRocketSprite = horizontalRocket;
-        this.verticalRocketSprite = verticalRocket;
+    }
+
+    public void SetObstacleSprites( Sprite box, Sprite stone, Sprite vase, Sprite damagedVase) {
         this.boxSprite = box;
         this.stoneSprite = stone;
         this.vaseSprite = vase;
@@ -62,6 +63,11 @@ public class Board : MonoBehaviour {
         this.greenCrack = greenCrack;
         this.blueCrack = blueCrack;
         this.yellowCrack = yellowCrack;
+    }
+
+    public void SetArtifactSprites(Sprite horizontalRocket, Sprite verticalRocket) {
+        this.horizontalRocketSprite = horizontalRocket;
+        this.verticalRocketSprite = verticalRocket;
     }
     
     public void SetParticleSystemPrefab(GameObject prefab) {
@@ -111,23 +117,28 @@ public class Board : MonoBehaviour {
     private void SpawnItemFromType(int x, int y, string itemType) {
         CellItemType type = CellItemType.Empty;
         Sprite sprite = null;
+        Sprite crackSprite = null;
         
         switch (itemType) {
             case "r":
                 sprite = redCubeSprite;
                 type = CellItemType.RedCube;
+                crackSprite = redCrack;
                 break;
             case "g":
                 sprite = greenCubeSprite;
                 type = CellItemType.GreenCube;
+                crackSprite = greenCrack;
                 break;
             case "b":
                 sprite = blueCubeSprite;
                 type = CellItemType.BlueCube;
+                crackSprite = blueCrack;
                 break;
             case "y":
                 sprite = yellowCubeSprite;
                 type = CellItemType.YellowCube;
+                crackSprite = yellowCrack;
                 break;
             case "rand":
                 string[] colors = { "r", "g", "b", "y" };
@@ -157,10 +168,10 @@ public class Board : MonoBehaviour {
                 return; // Empty cell
         }
         
-        SpawnItem(x, y, type, sprite);
+        SpawnItem(x, y, type, sprite, crackSprite);
     }
     
-    public void SpawnItem(int x, int y, CellItemType type, Sprite sprite) {
+    public void SpawnItem(int x, int y, CellItemType type, Sprite sprite, Sprite crackSprite) {
         if (type == CellItemType.Empty) return;
 
         Vector3 position = this.GetLocalPosition(x, y);
@@ -174,15 +185,15 @@ public class Board : MonoBehaviour {
         item.transform.SetParent(transform, false);
         
         SpriteRenderer spriteRenderer = item.AddComponent<SpriteRenderer>();
-        spriteRenderer.sprite = sprite;
         spriteRenderer.sortingOrder = y + 1;
         
         this.ScaleSpriteToFit(item, sprite, cellSize);
         
         CellItem itemComponent = item.AddComponent<CellItem>();
-        itemComponent.Initialize(type, x, y, sprite, particleSystemPrefab, GetCrackSpriteForItemType(type));
         
-        if (type == CellItemType.Vase) itemComponent.SetDamagedSprite(damagedVaseSprite);
+        if (type == CellItemType.Vase) 
+            itemComponent.Initialize(type, x, y, sprite, particleSystemPrefab, crackSprite, damagedVaseSprite);
+        else itemComponent.Initialize(type, x, y, sprite, particleSystemPrefab, crackSprite);
         
         grid[x, y] = itemComponent;
     }
@@ -329,23 +340,28 @@ public class Board : MonoBehaviour {
                     
                     CellItemType cubeType = CellItemType.Empty;
                     Sprite cubeSprite = null;
+                    Sprite crackSprite = null;
                     
                     switch (randomColor) {
                         case "r":
                             cubeType = CellItemType.RedCube;
                             cubeSprite = redCubeSprite;
+                            crackSprite = redCrack;
                             break;
                         case "g":
                             cubeType = CellItemType.GreenCube;
                             cubeSprite = greenCubeSprite;
+                            crackSprite = greenCrack;
                             break;
                         case "b":
                             cubeType = CellItemType.BlueCube;
                             cubeSprite = blueCubeSprite;
+                            crackSprite = blueCrack;
                             break;
                         case "y":
                             cubeType = CellItemType.YellowCube;
                             cubeSprite = yellowCubeSprite;
+                            crackSprite = yellowCrack;
                             break;
                     }
                     
@@ -357,13 +373,12 @@ public class Board : MonoBehaviour {
                     itemRect.sizeDelta = new Vector2(cellSize, cellSize);
                     
                     SpriteRenderer spriteRenderer = item.AddComponent<SpriteRenderer>();
-                    spriteRenderer.sprite = cubeSprite;
                     spriteRenderer.sortingOrder = gridHeight + 1;
                     
                     ScaleSpriteToFit(item, cubeSprite, cellSize);
                     
                     CellItem itemComponent = item.AddComponent<CellItem>();
-                    itemComponent.Initialize(cubeType, x, targetY, cubeSprite, particleSystemPrefab, GetCrackSpriteForItemType(cubeType));
+                    itemComponent.Initialize(cubeType, x, targetY, cubeSprite, particleSystemPrefab, crackSprite);
                     
                     grid[x, targetY] = itemComponent;
                     
@@ -519,16 +534,6 @@ public class Board : MonoBehaviour {
         }
         
         return -1; // No item found that can fall
-    }
-
-    private Sprite GetCrackSpriteForItemType(CellItemType itemType) {
-        return itemType switch {
-            CellItemType.RedCube => redCrack,
-            CellItemType.GreenCube => greenCrack,
-            CellItemType.BlueCube => blueCrack,
-            CellItemType.YellowCube => yellowCrack,
-            _ => blueCrack,
-        };
     }
 
     private (int box, int stone, int vase) GetObstacleCount() {
