@@ -64,4 +64,27 @@ public class AnimationManager : MonoBehaviour {
         
         return fadeTween;
     }
+
+    /* Lerp Without Clamp */
+    public Vector3 LerpWithoutClamp(Vector3 a, Vector3 b, float t) { return a + (b - a) * t; }
+    
+
+    /* Easing Functions */
+
+    public float EaseOutBack(float t) {
+        float s = 1.70158f;
+        return (t - 1) * (t - 1) * ((s + 1) * (t - 1) + s) + 1;
+    }
+    
+
+    public float EaseInBack(float t) {
+        float s = 1.70158f;
+        return t * t * ((s + 1) * t - s);
+    }
+
+    public float EaseOutElastic(float t) {
+        if (t == 0 || t == 1) return t;
+        
+        return Mathf.Pow(2, -10 * t) * Mathf.Sin((t - 0.1f) * 5 * Mathf.PI) + 1;
+    }
 }

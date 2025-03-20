@@ -267,7 +267,7 @@ public class Board : MonoBehaviour {
                     if (grid[x, y] == null) {
                         int targetY = FindFirstFallableItemAbove(x, y);
                         if (targetY > y) {
-                            StartCoroutine(AnimateFall(x, targetY, x, y));
+                            StartCoroutine(AnimateExistingCubeFall(x, targetY, x, y));
                             itemsMoved = true;
                         }
                     }
@@ -279,6 +279,42 @@ public class Board : MonoBehaviour {
         } while (itemsMoved);
         
         yield return StartCoroutine(SpawnNewCubesAtTop());
+    }
+
+    private IEnumerator AnimateExistingCubeFall(int fromX, int fromY, int toX, int toY) {
+        CellItem item = grid[fromX, fromY];
+        if (item == null) yield break;
+        
+        grid[fromX, fromY] = null;
+        grid[toX, toY] = item;
+        
+        item.SetPosition(toX, toY);
+        
+        Vector3 startPos = GetWorldPosition(fromX, fromY);
+        Vector3 targetPos = GetWorldPosition(toX, toY);
+        
+        float speed = AnimationManager.Instance.blockFallSpeed;
+        float distance = Vector3.Distance(startPos, targetPos);
+        float duration = distance / speed;
+        
+        float elapsedTime = 0f;
+        while (elapsedTime < duration) {
+            if (item == null) yield break;
+            
+            float t = elapsedTime / duration;
+            item.transform.position = AnimationManager.Instance.LerpWithoutClamp(startPos, targetPos, AnimationManager.Instance.EaseOutBack(t));
+            
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        
+        if (item != null) {
+            item.transform.position = targetPos;
+            
+            SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
+            if (renderer != null) 
+                renderer.sortingOrder = toY + 1;
+        }
     }
     
     private IEnumerator SpawnNewCubesAtTop() {
@@ -378,28 +414,29 @@ public class Board : MonoBehaviour {
     }
     
     private IEnumerator AnimateNewCubeFall(GameObject item, CellItem itemComponent, Vector3 startPos, Vector3 targetPos) {
+        if (item == null) yield return null; 
+
+        SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
+        if (renderer != null) 
+            renderer.sortingOrder = itemComponent.Y + 1;
+       
         float speed = AnimationManager.Instance.blockFallSpeed;
         float distance = Vector3.Distance(startPos, targetPos);
         float duration = distance / speed;
         
         float elapsedTime = 0f;
         while (elapsedTime < duration) {
-            if (item == null) yield break;
             
             float t = elapsedTime / duration;
-            item.transform.position = Vector3.Lerp(startPos, targetPos, t);
+            item.transform.position = AnimationManager.Instance.LerpWithoutClamp(startPos, targetPos, AnimationManager.Instance.EaseOutBack(t));
             
             elapsedTime += Time.deltaTime;
             yield return null;
         }
+
+        item.transform.position = targetPos;
         
-        if (item != null) {
-            item.transform.position = targetPos;
-            
-            SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
-            if (renderer != null) 
-                renderer.sortingOrder = itemComponent.Y + 1;
-        }
+       
     }
 
     
@@ -420,41 +457,6 @@ public class Board : MonoBehaviour {
         return -1; // No item found that can fall
     }
     
-    private IEnumerator AnimateFall(int fromX, int fromY, int toX, int toY) {
-        CellItem item = grid[fromX, fromY];
-        if (item == null) yield break;
-        
-        grid[fromX, fromY] = null;
-        grid[toX, toY] = item;
-        
-        item.SetPosition(toX, toY);
-        
-        Vector3 startPos = GetWorldPosition(fromX, fromY);
-        Vector3 targetPos = GetWorldPosition(toX, toY);
-        
-        float speed = AnimationManager.Instance.blockFallSpeed;
-        float distance = Vector3.Distance(startPos, targetPos);
-        float duration = distance / speed;
-        
-        float elapsedTime = 0f;
-        while (elapsedTime < duration) {
-            if (item == null) yield break;
-            
-            float t = elapsedTime / duration;
-            item.transform.position = Vector3.Lerp(startPos, targetPos, t);
-            
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-        
-        if (item != null) {
-            item.transform.position = targetPos;
-            
-            SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
-            if (renderer != null) 
-                renderer.sortingOrder = toY + 1;
-        }
-    }
 
     private HashSet<CellItem> FindConnectedCells(int startX, int startY, CellItemType targetType) {
         HashSet<CellItem> connectedCubes = new HashSet<CellItem>();
