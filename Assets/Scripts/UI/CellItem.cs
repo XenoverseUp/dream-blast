@@ -21,9 +21,10 @@ public class CellItem : MonoBehaviour {
     
     private SpriteRenderer spriteRenderer;
     private Sprite originalSprite;
+    private Sprite rocketStateSprite;
     private Sprite damagedSprite;
     private Board board;
-    private Sprite crack;
+    private Sprite crackSprite;
     private GameObject particleSystemPrefab;
 
     
@@ -37,34 +38,40 @@ public class CellItem : MonoBehaviour {
     private void Start() {
         board = GetComponentInParent<Board>();
         
-        BoxCollider2D collider = gameObject.AddComponent<BoxCollider2D>();
-        
+        BoxCollider2D collider = gameObject.AddComponent<BoxCollider2D>();        
         collider.size = new Vector2(1f, 1.15f);
         collider.offset = new Vector2(0f, -0.15f);
     }
     
-    public void Initialize(CellItemType type, int x, int y, Sprite sprite, GameObject particleSystemPrefab, Sprite crack) {
+    public void Initialize(CellItemType type, int x, int y) {
         this.type = type;
         this.x = x;
         this.y = y;
-        this.originalSprite = sprite;
-        this.particleSystemPrefab = particleSystemPrefab;
-        this.crack = crack;
+
         this.health = type == CellItemType.Vase ? 2 : 1;
         
         
-        if (spriteRenderer != null && sprite != null) {
-            spriteRenderer.sprite = sprite;
+        if (spriteRenderer != null && originalSprite != null) {
+            spriteRenderer.sprite = originalSprite;
         }
     }
     
-    public void Initialize(CellItemType type, int x, int y, Sprite sprite, GameObject particleSystemPrefab, Sprite crack, Sprite damagedSprite) {
-        Initialize(type, x, y, sprite, particleSystemPrefab, crack);
-        this.damagedSprite = damagedSprite;
+    public void SetSprites(Sprite sprite, Sprite crackSprite) {
+        this.originalSprite = sprite;
+        this.crackSprite = crackSprite;
+    }
+
+    public void SetRocketStateSprite(Sprite rocketStateSprite) {
+        if (this.IsObstacle()) return;
+        this.rocketStateSprite = rocketStateSprite;
     }
     
     public void SetDamagedSprite(Sprite damagedSprite) {
         this.damagedSprite = damagedSprite;
+    }
+
+    public void SetParticleSystemPrefab(GameObject prefab) {
+        this.particleSystemPrefab = prefab;
     }
     
     public void SetPosition(int x, int y) {
@@ -76,6 +83,59 @@ public class CellItem : MonoBehaviour {
         return type;
     }
     
+    
+    public bool CanFall() {
+        return IsCube() || IsRocket() || type == CellItemType.Vase;
+    }
+    
+    public bool TakeDamage() {
+        health -= 1;
+        
+        if (health <= 0) return true;
+
+        if (type == CellItemType.Vase && damagedSprite != null && spriteRenderer != null)  {
+            RenderDamagedVaseSprite();
+
+        }
+        
+        return false;
+    }
+    
+
+    public void RenderRocketSprite() {
+        if (IsObstacle()) return;
+        spriteRenderer.sprite = rocketStateSprite;
+    }
+
+    private void RenderDamagedVaseSprite() {
+        spriteRenderer.sprite = damagedSprite;
+    }
+
+    public void InstantiateParticleSystem() {
+        GameObject particleInstance = Instantiate(particleSystemPrefab, transform.position, Quaternion.identity);
+        
+        ParticleSystem particleSystem = particleInstance.GetComponent<ParticleSystem>();
+
+        if (particleSystem != null) {
+            ParticleSystemRenderer renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
+            renderer.material.mainTexture = crackSprite.texture;
+        
+            particleSystem.Play();
+            
+            float totalDuration = particleSystem.main.duration + particleSystem.main.startLifetime.constantMax;
+            Destroy(particleInstance, totalDuration);
+        } else {
+            Debug.LogWarning("Particle system component not found on prefab");
+            Destroy(particleInstance, 2f);
+        }
+        
+    }
+    
+    private void OnMouseDown() { board?.TryBlast(x, y); }
+
+
+    /* Helpers */
+
     public bool IsCube() {
         return type == CellItemType.RedCube || 
                type == CellItemType.GreenCube || 
@@ -92,45 +152,5 @@ public class CellItem : MonoBehaviour {
         return type == CellItemType.Box || 
                type == CellItemType.Stone || 
                type == CellItemType.Vase;
-    }
-    
-    public bool CanFall() {
-        return IsCube() || IsRocket() || type == CellItemType.Vase;
-    }
-    
-    public bool TakeDamage() {
-        health -= 1;
-        
-        if (health <= 0) return true;
-        else {
-            if (type == CellItemType.Vase && damagedSprite != null && spriteRenderer != null) 
-                spriteRenderer.sprite = damagedSprite;
-            
-            return false;
-        }
-    }
-
-    public void InstantiateParticleSystem() {
-        GameObject particleInstance = Instantiate(particleSystemPrefab, transform.position, Quaternion.identity);
-        
-        ParticleSystem particleSystem = particleInstance.GetComponent<ParticleSystem>();
-
-        if (particleSystem != null) {
-            ParticleSystemRenderer renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
-            renderer.material.mainTexture = crack.texture;
-        
-            particleSystem.Play();
-            
-            float totalDuration = particleSystem.main.duration + particleSystem.main.startLifetime.constantMax;
-            Destroy(particleInstance, totalDuration);
-        } else {
-            Debug.LogWarning("Particle system component not found on prefab");
-            Destroy(particleInstance, 2f);
-        }
-        
-    }
-    
-    private void OnMouseDown() {
-        if (board != null) board.TryBlast(x, y);
     }
 }

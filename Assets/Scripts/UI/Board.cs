@@ -190,10 +190,13 @@ public class Board : MonoBehaviour {
         this.ScaleSpriteToFit(item, sprite, cellSize);
         
         CellItem itemComponent = item.AddComponent<CellItem>();
+
+        itemComponent.SetSprites(sprite, crackSprite);
+        itemComponent.SetParticleSystemPrefab(particleSystemPrefab);
         
-        if (type == CellItemType.Vase) 
-            itemComponent.Initialize(type, x, y, sprite, particleSystemPrefab, crackSprite, damagedVaseSprite);
-        else itemComponent.Initialize(type, x, y, sprite, particleSystemPrefab, crackSprite);
+        if (type == CellItemType.Vase) itemComponent.SetDamagedSprite(damagedVaseSprite);
+        
+        itemComponent.Initialize(type, x, y);
         
         grid[x, y] = itemComponent;
     }
@@ -233,8 +236,6 @@ public class Board : MonoBehaviour {
                 AnimationManager.Instance.PlayDestroyBlock(cell.gameObject).setOnComplete(() => RemoveItem(cell.X, cell.Y));
                 cell.InstantiateParticleSystem();
                 CheckAndDamageAdjacentObstacles(cell.X, cell.Y, affectedObstacles);
-                
-                Vector3 position = GetWorldPosition(cell.X, cell.Y);
             }
 
             var (box, stone, vase) = GetObstacleCount();
@@ -378,7 +379,11 @@ public class Board : MonoBehaviour {
                     ScaleSpriteToFit(item, cubeSprite, cellSize);
                     
                     CellItem itemComponent = item.AddComponent<CellItem>();
-                    itemComponent.Initialize(cubeType, x, targetY, cubeSprite, particleSystemPrefab, crackSprite);
+
+                    itemComponent.SetSprites(cubeSprite, crackSprite);
+                    itemComponent.SetParticleSystemPrefab(particleSystemPrefab);
+
+                    itemComponent.Initialize(cubeType, x, targetY);
                     
                     grid[x, targetY] = itemComponent;
                     
