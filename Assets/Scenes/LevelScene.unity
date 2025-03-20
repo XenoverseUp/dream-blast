@@ -931,6 +931,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   blockShakeAmount: 10
+  blockFallSpeed: 10
 --- !u!4 &1571344174
 Transform:
   m_ObjectHideFlags: 0
@@ -1096,7 +1097,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 196546543917025515, guid: 0968d5805a4c74e5c8010cd071eff162, type: 3}
       propertyPath: currentLevel
-      value: 1
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3726604621445658932, guid: 0968d5805a4c74e5c8010cd071eff162, type: 3}
       propertyPath: m_LocalPosition.x

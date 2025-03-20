@@ -3,7 +3,8 @@ using UnityEngine;
 public class AnimationManager : MonoBehaviour {
     public static AnimationManager Instance { get; private set; }
 
-    [SerializeField] float blockShakeAmount = 15f;
+    [SerializeField] public float blockShakeAmount = 15f;
+    [SerializeField] public float blockFallSpeed = 7.5f;
 
         
     private void Awake() {       

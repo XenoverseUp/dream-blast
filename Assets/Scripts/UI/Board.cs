@@ -1,6 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 
 public class Board : MonoBehaviour {
     private GameObject particleSystemPrefab;
@@ -25,6 +25,8 @@ public class Board : MonoBehaviour {
     private int gridHeight;
     private float cellSize;
     private CellItem[,] grid;
+    
+    private bool isFalling = false;
     
     public void SetBlockSprites(
         Sprite redCube, 
@@ -144,6 +146,8 @@ public class Board : MonoBehaviour {
     }
     
     public void SpawnItem(int x, int y, CellItemType type, Sprite sprite) {
+        if (type == CellItemType.Empty) return;
+
         Vector3 position = this.GetLocalPosition(x, y);
         
         GameObject item = new GameObject("Block_" + type.ToString());
@@ -191,6 +195,11 @@ public class Board : MonoBehaviour {
     }
     
     public bool TryBlast(int x, int y) {
+        if (isFalling) {
+            Debug.Log("Cannot blast while items are falling");
+            return false;
+        }
+        
         if (grid[x, y] == null) {
             Debug.Log("Cell is empty");
             return false;
@@ -215,11 +224,8 @@ public class Board : MonoBehaviour {
             
             HashSet<Vector2Int> affectedObstacles = new HashSet<Vector2Int>();
             foreach (CellItem cell in connectedCells) {
-                AnimationManager.Instance.PlayDestroyBlock(cell.gameObject)
-                    .setOnComplete(() => RemoveItem(cell.X, cell.Y));
-
+                AnimationManager.Instance.PlayDestroyBlock(cell.gameObject).setOnComplete(() => RemoveItem(cell.X, cell.Y));
                 cell.InstantiateParticleSystem();
-
                 CheckAndDamageAdjacentObstacles(cell.X, cell.Y, affectedObstacles);
                 
                 Vector3 position = GetWorldPosition(cell.X, cell.Y);
@@ -229,6 +235,9 @@ public class Board : MonoBehaviour {
             
             LevelManager.Instance.UpdateObstacleCountMap(box, stone, vase);
             LevelManager.Instance.SpendMove();
+                        
+            StartCoroutine(ProcessFallingItemsAfterDelay(0.3f));
+            
             return true;
         } else if (item.IsRocket()) {
             Debug.Log("Rocket clicked, but rocket functionality is disabled");
@@ -238,6 +247,214 @@ public class Board : MonoBehaviour {
         return false;
     }
 
+    private IEnumerator ProcessFallingItemsAfterDelay(float delay) {
+        yield return new WaitForSeconds(delay);
+        
+        isFalling = true;
+        yield return StartCoroutine(ProcessFallingItems());
+        isFalling = false;
+    }
+    
+    
+    private IEnumerator ProcessFallingItems() {
+        bool itemsMoved;
+        
+        do {
+            itemsMoved = false;
+            
+            for (int y = 0; y < gridHeight - 1; y++) {
+                for (int x = 0; x < gridWidth; x++) {
+                    if (grid[x, y] == null) {
+                        int targetY = FindFirstFallableItemAbove(x, y);
+                        if (targetY > y) {
+                            StartCoroutine(AnimateFall(x, targetY, x, y));
+                            itemsMoved = true;
+                        }
+                    }
+                }
+            }
+            
+            yield return new WaitForSeconds(0.2f);
+            
+        } while (itemsMoved);
+        
+        yield return StartCoroutine(SpawnNewCubesAtTop());
+    }
+    
+    private IEnumerator SpawnNewCubesAtTop() {
+        bool cubesAdded = false;
+        
+        for (int x = 0; x < gridWidth; x++) {
+            List<int> emptyCellsToFill = FindEmptyCellsToFill(x);
+            
+            if (emptyCellsToFill.Count > 0) {
+                foreach (int targetY in emptyCellsToFill) {
+                    string[] colors = { "r", "g", "b", "y" };
+                    string randomColor = colors[UnityEngine.Random.Range(0, colors.Length)];
+                    
+                    Vector3 spawnPosition = GetWorldPosition(x, gridHeight);
+                    
+                    CellItemType cubeType = CellItemType.Empty;
+                    Sprite cubeSprite = null;
+                    
+                    switch (randomColor) {
+                        case "r":
+                            cubeType = CellItemType.RedCube;
+                            cubeSprite = redCubeSprite;
+                            break;
+                        case "g":
+                            cubeType = CellItemType.GreenCube;
+                            cubeSprite = greenCubeSprite;
+                            break;
+                        case "b":
+                            cubeType = CellItemType.BlueCube;
+                            cubeSprite = blueCubeSprite;
+                            break;
+                        case "y":
+                            cubeType = CellItemType.YellowCube;
+                            cubeSprite = yellowCubeSprite;
+                            break;
+                    }
+                    
+                    GameObject item = new GameObject("Block_" + cubeType.ToString());
+                    item.transform.SetParent(transform, false);
+                    item.transform.position = spawnPosition;
+                    
+                    RectTransform itemRect = item.AddComponent<RectTransform>();
+                    itemRect.sizeDelta = new Vector2(cellSize, cellSize);
+                    
+                    SpriteRenderer spriteRenderer = item.AddComponent<SpriteRenderer>();
+                    spriteRenderer.sprite = cubeSprite;
+                    spriteRenderer.sortingOrder = gridHeight + 1;
+                    
+                    ScaleSpriteToFit(item, cubeSprite, cellSize);
+                    
+                    CellItem itemComponent = item.AddComponent<CellItem>();
+                    itemComponent.Initialize(cubeType, x, targetY, cubeSprite, particleSystemPrefab, GetCrackSpriteForItemType(cubeType));
+                    
+                    grid[x, targetY] = itemComponent;
+                    
+                    StartCoroutine(AnimateNewCubeFall(item, itemComponent, spawnPosition, GetWorldPosition(x, targetY)));
+                    
+                    cubesAdded = true;
+                    
+                    yield return new WaitForSeconds(0.5f / AnimationManager.Instance.blockFallSpeed);
+                }
+            }
+        }
+        
+        if (cubesAdded) yield return new WaitForSeconds(0.5f / AnimationManager.Instance.blockFallSpeed);
+        
+    }
+    
+
+    private List<int> FindEmptyCellsToFill(int x) {
+        List<int> emptyCells = new List<int>();
+        
+        List<int> obstaclePositions = new List<int>();
+        for (int y = 0; y < gridHeight; y++) {
+            if (grid[x, y] != null && !grid[x, y].CanFall()) 
+                obstaclePositions.Add(y);
+        }
+        
+        if (obstaclePositions.Count == 0) {
+            for (int y = 0; y < gridHeight; y++) {
+                if (grid[x, y] == null)
+                    emptyCells.Add(y);
+            }
+            return emptyCells;
+        }
+        
+        int highestObstacle = -1;
+        foreach (int obstacleY in obstaclePositions) {
+            if (obstacleY > highestObstacle) 
+                highestObstacle = obstacleY;
+        }
+        
+        for (int y = highestObstacle + 1; y < gridHeight; y++)
+            if (grid[x, y] == null) emptyCells.Add(y);
+        
+        return emptyCells;
+    }
+    
+    private IEnumerator AnimateNewCubeFall(GameObject item, CellItem itemComponent, Vector3 startPos, Vector3 targetPos) {
+        float speed = AnimationManager.Instance.blockFallSpeed;
+        float distance = Vector3.Distance(startPos, targetPos);
+        float duration = distance / speed;
+        
+        float elapsedTime = 0f;
+        while (elapsedTime < duration) {
+            if (item == null) yield break;
+            
+            float t = elapsedTime / duration;
+            item.transform.position = Vector3.Lerp(startPos, targetPos, t);
+            
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        
+        if (item != null) {
+            item.transform.position = targetPos;
+            
+            SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
+            if (renderer != null) 
+                renderer.sortingOrder = itemComponent.Y + 1;
+        }
+    }
+
+    
+    private int FindFirstFallableItemAbove(int x, int emptyY) {
+        for (int checkY = emptyY + 1; checkY < gridHeight; checkY++) {
+            if (grid[x, checkY] == null) 
+                continue;
+            
+            if (grid[x, checkY] != null && !grid[x, checkY].CanFall()) {
+                return -1;
+            }
+            
+            if (grid[x, checkY] != null && grid[x, checkY].CanFall()) {
+                return checkY;
+            }
+        }
+        
+        return -1; // No item found that can fall
+    }
+    
+    private IEnumerator AnimateFall(int fromX, int fromY, int toX, int toY) {
+        CellItem item = grid[fromX, fromY];
+        if (item == null) yield break;
+        
+        grid[fromX, fromY] = null;
+        grid[toX, toY] = item;
+        
+        item.SetPosition(toX, toY);
+        
+        Vector3 startPos = GetWorldPosition(fromX, fromY);
+        Vector3 targetPos = GetWorldPosition(toX, toY);
+        
+        float speed = AnimationManager.Instance.blockFallSpeed;
+        float distance = Vector3.Distance(startPos, targetPos);
+        float duration = distance / speed;
+        
+        float elapsedTime = 0f;
+        while (elapsedTime < duration) {
+            if (item == null) yield break;
+            
+            float t = elapsedTime / duration;
+            item.transform.position = Vector3.Lerp(startPos, targetPos, t);
+            
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        
+        if (item != null) {
+            item.transform.position = targetPos;
+            
+            SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
+            if (renderer != null) 
+                renderer.sortingOrder = toY + 1;
+        }
+    }
 
     private HashSet<CellItem> FindConnectedCells(int startX, int startY, CellItemType targetType) {
         HashSet<CellItem> connectedCubes = new HashSet<CellItem>();
@@ -327,7 +544,6 @@ public class Board : MonoBehaviour {
 
     private (int box, int stone, int vase) GetObstacleCount() {
         int box = 0, stone = 0, vase = 0;
-
 
         for (int x = 0; x < gridWidth; x++) {
             for (int y = 0; y < gridHeight; y++) {
