@@ -23,6 +23,7 @@ public class CellItem : MonoBehaviour {
     private Sprite originalSprite;
     private Sprite damagedSprite;
     private Board board;
+
     
     public int X { get => x; }
     public int Y { get => y; }
@@ -98,8 +99,12 @@ public class CellItem : MonoBehaviour {
             return false;
         }
     }
+
+    public void InstantiateParticleSystem() {
+        
+    }
     
     private void OnMouseDown() {
-        if (board != null && !this.IsObstacle()) board.TryBlast(x, y);
+        if (board != null) board.TryBlast(x, y);
     }
 }

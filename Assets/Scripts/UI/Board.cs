@@ -24,7 +24,7 @@ public class Board : MonoBehaviour {
     private int gridWidth;
     private int gridHeight;
     private float cellSize;
-    private Cell[,] grid;
+    private CellItem[,] grid;
     
     public void SetBlockSprites(
         Sprite redCube, 
@@ -72,11 +72,11 @@ public class Board : MonoBehaviour {
     }
     
     private void InitializeGrid() {
-        grid = new Cell[this.gridWidth, this.gridHeight];
+        grid = new CellItem[this.gridWidth, this.gridHeight];
 
         for (int x = 0; x < gridWidth; x++) {
             for (int y = 0; y < gridHeight; y++) {
-                grid[x, y] = new Cell(x, y);
+                grid[x, y] = null;
             }
         }
     }
@@ -165,7 +165,7 @@ public class Board : MonoBehaviour {
         
         if (type == CellItemType.Vase) itemComponent.SetDamagedSprite(damagedVaseSprite);
         
-        grid[x, y].SetItem(itemComponent);
+        grid[x, y] = itemComponent;
     }
     
     private void ScaleSpriteToFit(GameObject item, Sprite sprite, float targetSize) {
@@ -191,34 +191,41 @@ public class Board : MonoBehaviour {
     }
     
     public bool TryBlast(int x, int y) {
-        if (grid[x, y].IsEmpty()) {
+        if (grid[x, y] == null) {
             Debug.Log("Cell is empty");
             return false;
         }
         
-        CellItem item = grid[x, y].GetItem();
+        CellItem item = grid[x, y];
 
-        if (item.IsObstacle()) return false;
+        if (item.IsObstacle()) {
+            AnimationManager.Instance.PlayInvalidBlast(item.gameObject);
+            return false;
+        }
 
         
         if (item.IsCube()) {
             CellItemType itemType = item.GetItemType();
-            HashSet<Vector2Int> connectedCubes = FindConnectedCubes(x, y, itemType);
+            HashSet<CellItem> connectedCells = FindConnectedCells(x, y, itemType);
             
-            if (connectedCubes.Count < 2) {
-                Debug.Log("Not enough connected cubes to blast");
+            if (connectedCells.Count < 2) {
+                AnimationManager.Instance.PlayInvalidBlast(item.gameObject);
                 return false;
             }
             
             HashSet<Vector2Int> affectedObstacles = new HashSet<Vector2Int>();
-            foreach (Vector2Int cubePos in connectedCubes) {
-                CheckAndDamageAdjacentObstacles(cubePos.x, cubePos.y, affectedObstacles);
+            foreach (CellItem cell in connectedCells) {
+                AnimationManager.Instance.PlayDestroyBlock(cell.gameObject)
+                    .setOnComplete(() => RemoveItem(cell.X, cell.Y));
+
+                cell.InstantiateParticleSystem();
+
+                CheckAndDamageAdjacentObstacles(cell.X, cell.Y, affectedObstacles);
                 
-                Vector3 position = GetWorldPosition(cubePos.x, cubePos.y);
+                Vector3 position = GetWorldPosition(cell.X, cell.Y);
                 InstantiateParticleSystem(position, itemType);
             }
-            
-            foreach (Vector2Int cubePos in connectedCubes) RemoveItem(cubePos.x, cubePos.y);
+                    
             LevelManager.Instance.SpendMove();
             
             return true;
@@ -231,13 +238,17 @@ public class Board : MonoBehaviour {
     }
 
 
-    private HashSet<Vector2Int> FindConnectedCubes(int startX, int startY, CellItemType targetType) {
-        HashSet<Vector2Int> connectedCubes = new HashSet<Vector2Int>();
+    private HashSet<CellItem> FindConnectedCells(int startX, int startY, CellItemType targetType) {
+        HashSet<CellItem> connectedCubes = new HashSet<CellItem>();
+        HashSet<Vector2Int> visitedPositions = new HashSet<Vector2Int>();
         Queue<Vector2Int> queue = new Queue<Vector2Int>();
         
         Vector2Int startPos = new Vector2Int(startX, startY);
+        CellItem startItem = grid[startX, startY];
+        
         queue.Enqueue(startPos);
-        connectedCubes.Add(startPos);
+        visitedPositions.Add(startPos);
+        connectedCubes.Add(startItem);
         
         Vector2Int[] directions = new Vector2Int[] {
             new(0, 1),
@@ -255,10 +266,11 @@ public class Board : MonoBehaviour {
                 
                 if (newX >= 0 && newX < gridWidth && newY >= 0 && newY < gridHeight) {
                     Vector2Int newPos = new Vector2Int(newX, newY);
-                    if (!connectedCubes.Contains(newPos) && !grid[newX, newY].IsEmpty()) {
-                        CellItem adjacentItem = grid[newX, newY].GetItem();
+                    if (!visitedPositions.Contains(newPos) && grid[newX, newY] != null) {
+                        CellItem adjacentItem = grid[newX, newY];
                         if (adjacentItem.GetItemType() == targetType) {
-                            connectedCubes.Add(newPos);
+                            visitedPositions.Add(newPos);
+                            connectedCubes.Add(adjacentItem);
                             queue.Enqueue(newPos);
                         }
                     }
@@ -286,8 +298,8 @@ public class Board : MonoBehaviour {
                 
                 if (processedObstacles.Contains(obstaclePos)) continue;
                 
-                if (!grid[newX, newY].IsEmpty()) {
-                    CellItem adjacentItem = grid[newX, newY].GetItem();
+                if (grid[newX, newY] != null) {
+                    CellItem adjacentItem = grid[newX, newY];
                     
                     if (adjacentItem.IsObstacle()) {
                         if (adjacentItem.GetItemType() == CellItemType.Stone) continue;
@@ -333,18 +345,18 @@ public class Board : MonoBehaviour {
     }
 
     private void RemoveItem(int x, int y) {
-        if (!grid[x, y].IsEmpty()) {
-            CellItem item = grid[x, y].GetItem();
+        if (grid[x, y] != null) {
+            CellItem item = grid[x, y];
             Destroy(item.gameObject);
-            grid[x, y].Clear();
+            grid[x, y] = null;
         }
     }
 
     private void OnDestroy() {
         for (int x = 0; x < gridWidth; x++) {
             for (int y = 0; y < gridHeight; y++) {
-                if (!grid[x, y].IsEmpty()) {
-                    Destroy(grid[x, y].GetItem().gameObject);
+                if (grid[x, y] != null) {
+                    Destroy(grid[x, y].gameObject);
                 }
             }
         }
