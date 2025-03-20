@@ -11,6 +11,11 @@ public class AnimationManager : MonoBehaviour {
         else Destroy(gameObject);
     }
 
+    public LTDescr PlayUpdateText(GameObject gameObject) {
+        gameObject.transform.localScale = new(1.2f ,1.2f ,1.2f);
+        return LeanTween.scale(gameObject, new(1,1,1), 0.15f).setEaseOutBounce();
+    }
+
     public LTSeq PlayInvalidBlast(GameObject gameObject) {
         LeanTween.cancel(gameObject);
         gameObject.transform.rotation = Quaternion.identity;

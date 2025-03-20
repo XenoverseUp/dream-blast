@@ -161,7 +161,7 @@ public class Board : MonoBehaviour {
         this.ScaleSpriteToFit(item, sprite, cellSize);
         
         CellItem itemComponent = item.AddComponent<CellItem>();
-        itemComponent.Initialize(type, x, y, sprite);
+        itemComponent.Initialize(type, x, y, sprite, particleSystemPrefab, GetCrackSpriteForItemType(type));
         
         if (type == CellItemType.Vase) itemComponent.SetDamagedSprite(damagedVaseSprite);
         
@@ -223,11 +223,12 @@ public class Board : MonoBehaviour {
                 CheckAndDamageAdjacentObstacles(cell.X, cell.Y, affectedObstacles);
                 
                 Vector3 position = GetWorldPosition(cell.X, cell.Y);
-                InstantiateParticleSystem(position, itemType);
             }
-                    
-            LevelManager.Instance.SpendMove();
+
+            var (box, stone, vase) = GetObstacleCount();
             
+            LevelManager.Instance.UpdateObstacleCountMap(box, stone, vase);
+            LevelManager.Instance.SpendMove();
             return true;
         } else if (item.IsRocket()) {
             Debug.Log("Rocket clicked, but rocket functionality is disabled");
@@ -313,26 +314,6 @@ public class Board : MonoBehaviour {
             }
         }
     }
-
-    private void InstantiateParticleSystem(Vector3 position, CellItemType itemType) {
-        GameObject particleInstance = Instantiate(particleSystemPrefab, position, Quaternion.identity);
-        
-        ParticleSystem particleSystem = particleInstance.GetComponent<ParticleSystem>();
-
-        if (particleSystem != null) {
-            Sprite crackSprite = GetCrackSpriteForItemType(itemType);
-            ParticleSystemRenderer renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
-            renderer.material.mainTexture = crackSprite.texture;
-        
-            particleSystem.Play();
-            
-            float totalDuration = particleSystem.main.duration + particleSystem.main.startLifetime.constantMax;
-            Destroy(particleInstance, totalDuration);
-        } else {
-            Debug.LogWarning("Particle system component not found on prefab");
-            Destroy(particleInstance, 2f);
-        }
-    }
     
     private Sprite GetCrackSpriteForItemType(CellItemType itemType) {
         return itemType switch {
@@ -342,6 +323,24 @@ public class Board : MonoBehaviour {
             CellItemType.YellowCube => yellowCrack,
             _ => blueCrack,
         };
+    }
+
+    private (int box, int stone, int vase) GetObstacleCount() {
+        int box = 0, stone = 0, vase = 0;
+
+
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                CellItem item = grid[x, y];
+                if (item == null || !item.IsObstacle()) continue;
+
+                if (item.GetItemType() == CellItemType.Box) box += 1;
+                else if (item.GetItemType() == CellItemType.Stone) stone += 1;
+                else if (item.GetItemType() == CellItemType.Vase) vase += 1;
+            }
+        }
+
+        return (box, stone, vase);
     }
 
     private void RemoveItem(int x, int y) {

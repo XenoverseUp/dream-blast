@@ -18,6 +18,7 @@ public class MoveText : MonoBehaviour, IActionListener {
     public void OnAction(int moveCount, Dictionary<string, int> item) {
         if (textComponent != null) {
             textComponent.SetText(moveCount.ToString());
+            AnimationManager.Instance.PlayUpdateText(textComponent.gameObject);
         }
     }
 }

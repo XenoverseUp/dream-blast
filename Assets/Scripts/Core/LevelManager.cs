@@ -76,4 +76,10 @@ public class LevelManager : MonoBehaviour {
         this.moveCount -= 1;
         Notify();
     }
+
+    public void UpdateObstacleCountMap(int box, int stone, int vase) {
+        if (obstacleCountMap.ContainsKey("bo")) obstacleCountMap["bo"] = box;
+        if (obstacleCountMap.ContainsKey("s")) obstacleCountMap["s"] = stone;
+        if (obstacleCountMap.ContainsKey("v")) obstacleCountMap["v"] = vase;
+    }
 }

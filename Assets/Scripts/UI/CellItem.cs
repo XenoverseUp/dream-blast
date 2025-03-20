@@ -23,6 +23,8 @@ public class CellItem : MonoBehaviour {
     private Sprite originalSprite;
     private Sprite damagedSprite;
     private Board board;
+    private Sprite crack;
+    private GameObject particleSystemPrefab;
 
     
     public int X { get => x; }
@@ -42,11 +44,13 @@ public class CellItem : MonoBehaviour {
         collider.offset = new Vector2(0f, -0.15f);
     }
     
-    public void Initialize(CellItemType type, int x, int y, Sprite sprite) {
+    public void Initialize(CellItemType type, int x, int y, Sprite sprite, GameObject particleSystemPrefab, Sprite crack) {
         this.type = type;
         this.x = x;
         this.y = y;
         this.originalSprite = sprite;
+        this.particleSystemPrefab = particleSystemPrefab;
+        this.crack = crack;
         
         if (type == CellItemType.Vase) {
             health = 2;
@@ -101,6 +105,22 @@ public class CellItem : MonoBehaviour {
     }
 
     public void InstantiateParticleSystem() {
+        GameObject particleInstance = Instantiate(particleSystemPrefab, transform.position, Quaternion.identity);
+        
+        ParticleSystem particleSystem = particleInstance.GetComponent<ParticleSystem>();
+
+        if (particleSystem != null) {
+            ParticleSystemRenderer renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
+            renderer.material.mainTexture = crack.texture;
+        
+            particleSystem.Play();
+            
+            float totalDuration = particleSystem.main.duration + particleSystem.main.startLifetime.constantMax;
+            Destroy(particleInstance, totalDuration);
+        } else {
+            Debug.LogWarning("Particle system component not found on prefab");
+            Destroy(particleInstance, 2f);
+        }
         
     }
     
