@@ -22,8 +22,12 @@ public class AnimationManager : MonoBehaviour {
     }
 
     public LTDescr PlayUpdateText(GameObject gameObject) {
-        gameObject.transform.localScale = new(1.2f ,1.2f ,1.2f);
-        return LeanTween.scale(gameObject, new(1,1,1), 0.15f).setEaseOutBounce();
+        LeanTween.cancel(gameObject);
+
+        Vector3 originalScale = gameObject.transform.localScale;
+        gameObject.transform.localScale = 1.2f * originalScale;
+
+        return LeanTween.scale(gameObject, originalScale, 0.15f).setEaseOutBounce();
     }
 
     public LTSeq PlayInvalidBlast(GameObject gameObject) {

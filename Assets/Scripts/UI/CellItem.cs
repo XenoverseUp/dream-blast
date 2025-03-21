@@ -94,7 +94,6 @@ public class CellItem : MonoBehaviour {
 
         if (type == CellItemType.Vase && damagedSprite != null && spriteRenderer != null)  {
             RenderDamagedVaseSprite();
-
         }
         
         return false;
