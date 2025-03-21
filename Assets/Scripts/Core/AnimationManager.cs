@@ -12,6 +12,15 @@ public class AnimationManager : MonoBehaviour {
         else Destroy(gameObject);
     }
 
+    public LTDescr PlaySwitchToRocketState(GameObject gameObject) {
+        LeanTween.cancel(gameObject);
+
+        Vector3 originalScale = gameObject.transform.localScale;
+        gameObject.transform.localScale = 1.2f * originalScale;
+
+        return LeanTween.scale(gameObject, originalScale, 0.4f).setEaseOutBounce();
+    }
+
     public LTDescr PlayUpdateText(GameObject gameObject) {
         gameObject.transform.localScale = new(1.2f ,1.2f ,1.2f);
         return LeanTween.scale(gameObject, new(1,1,1), 0.15f).setEaseOutBounce();

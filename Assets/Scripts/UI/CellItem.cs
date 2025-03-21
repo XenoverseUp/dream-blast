@@ -101,13 +101,14 @@ public class CellItem : MonoBehaviour {
     }
     
     public void RenderOriginalSprite() {
-        if (IsObstacle()) return;
-        spriteRenderer.sprite = rocketStateSprite;
+        if (IsObstacle() ||spriteRenderer.sprite == originalSprite) return;
+        spriteRenderer.sprite = originalSprite;
     }
 
     public void RenderRocketSprite() {
-        if (IsObstacle()) return;
+        if (IsObstacle() || spriteRenderer.sprite == rocketStateSprite) return;
         spriteRenderer.sprite = rocketStateSprite;
+        AnimationManager.Instance.PlaySwitchToRocketState(gameObject);
     }
 
     private void RenderDamagedVaseSprite() {

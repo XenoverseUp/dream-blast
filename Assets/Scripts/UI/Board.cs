@@ -51,6 +51,18 @@ public class Board : MonoBehaviour {
         this.yellowCubeSprite = yellowCube;
     }
 
+    public void SetRocketStateSprites(
+        Sprite redRocketStateSprite, 
+        Sprite greenRocketStateSprite, 
+        Sprite blueRocketStateSprite, 
+        Sprite yellowRocketStateSprite
+    ) {
+        this.redCubeRocketSprite = redRocketStateSprite;
+        this.greenCubeRocketSprite = greenRocketStateSprite;
+        this.blueCubeRocketSprite = blueRocketStateSprite;
+        this.yellowCubeRocketSprite = yellowRocketStateSprite;
+    }
+
     public void SetObstacleSprites( Sprite box, Sprite stone, Sprite vase, Sprite damagedVase) {
         this.boxSprite = box;
         this.stoneSprite = stone;
@@ -104,6 +116,8 @@ public class Board : MonoBehaviour {
             string itemType = levelGrid[i];
             SpawnItemFromType(x, y, itemType);
         }
+
+        RenderRocketStateSprites();
     }
 
     private void RemoveItem(int x, int y) {
@@ -192,7 +206,7 @@ public class Board : MonoBehaviour {
         SpriteRenderer spriteRenderer = item.AddComponent<SpriteRenderer>();
         spriteRenderer.sortingOrder = y + 1;
         
-        this.ScaleSpriteToFit(item, sprite, cellSize);
+        ScaleSpriteToFit(item, sprite, cellSize);
         
         CellItem itemComponent = item.AddComponent<CellItem>();
 
@@ -203,7 +217,9 @@ public class Board : MonoBehaviour {
         
         itemComponent.Initialize(type, x, y);
 
-        if (itemComponent.IsCube()) itemComponent.SetRocketStateSprite(rocketStateSprite);
+        if (itemComponent.IsCube())
+            itemComponent.SetRocketStateSprite(rocketStateSprite);
+              
         
         grid[x, y] = itemComponent;
     }
@@ -270,7 +286,8 @@ public class Board : MonoBehaviour {
         yield return StartCoroutine(ProcessFallingItems());
         isFalling = false;
 
-        RenderRocketSprites();
+        RenderRocketStateSprites();
+        
     }
     
     
@@ -351,27 +368,32 @@ public class Board : MonoBehaviour {
                     CellItemType cubeType = CellItemType.Empty;
                     Sprite cubeSprite = null;
                     Sprite crackSprite = null;
+                    Sprite rocketStateSprite = null;
                     
                     switch (randomColor) {
                         case "r":
                             cubeType = CellItemType.RedCube;
                             cubeSprite = redCubeSprite;
                             crackSprite = redCrack;
+                            rocketStateSprite = redCubeRocketSprite;
                             break;
                         case "g":
                             cubeType = CellItemType.GreenCube;
                             cubeSprite = greenCubeSprite;
                             crackSprite = greenCrack;
+                            rocketStateSprite = greenCubeRocketSprite;
                             break;
                         case "b":
                             cubeType = CellItemType.BlueCube;
                             cubeSprite = blueCubeSprite;
                             crackSprite = blueCrack;
+                            rocketStateSprite = blueCubeRocketSprite;
                             break;
                         case "y":
                             cubeType = CellItemType.YellowCube;
                             cubeSprite = yellowCubeSprite;
                             crackSprite = yellowCrack;
+                            rocketStateSprite = yellowCubeRocketSprite;
                             break;
                     }
                     
@@ -391,8 +413,10 @@ public class Board : MonoBehaviour {
 
                     itemComponent.SetSprites(cubeSprite, crackSprite);
                     itemComponent.SetParticleSystemPrefab(particleSystemPrefab);
-
                     itemComponent.Initialize(cubeType, x, targetY);
+                    
+                    if (itemComponent.IsCube())
+                        itemComponent.SetRocketStateSprite(rocketStateSprite);
                     
                     grid[x, targetY] = itemComponent;
                     
@@ -405,11 +429,9 @@ public class Board : MonoBehaviour {
             }
         }
         
-        if (cubesAdded) yield return new WaitForSeconds(0.5f / AnimationManager.Instance.blockFallSpeed);
-        
+        if (cubesAdded) yield return new WaitForSeconds(0.25f);
     }
-    
-    
+        
     private IEnumerator AnimateNewCubeFall(GameObject item, CellItem itemComponent, Vector3 startPos, Vector3 targetPos) {
         if (item == null) yield return null; 
 
@@ -469,13 +491,25 @@ public class Board : MonoBehaviour {
         }
     }
 
-    private void RenderRocketSprites() {
+    private void RenderRocketStateSprites() {
         HashSet<Vector2Int> visitedPositions = new HashSet<Vector2Int>();
 
         for (int x = 0; x < gridWidth; x++) {
-            for (int y = 0; y  < gridHeight; y++) {
-                // Get FindConnectedells, render them as rocket or normal
-                // Push them to visited.
+            for (int y = 0; y < gridHeight; y++) {
+                if (grid[x, y] == null || !grid[x, y].IsCube() || visitedPositions.Contains(new Vector2Int(x, y)))
+                    continue;
+
+                CellItemType itemType = grid[x, y].GetItemType();
+                HashSet<CellItem> connectedCells = FindConnectedCells(x, y, itemType);
+                
+                foreach (CellItem cell in connectedCells) {
+                    visitedPositions.Add(new Vector2Int(cell.X, cell.Y));
+                }
+                
+                if (connectedCells.Count >= 4) foreach (CellItem cell in connectedCells)
+                    cell.RenderRocketSprite();
+                else foreach (CellItem cell in connectedCells)
+                    cell.RenderOriginalSprite();
             }
         }
 

@@ -111,6 +111,13 @@ public class GamePanel : MonoBehaviour {
             yellowCubeSprite
         );
 
+        boardScript.SetRocketStateSprites(
+            redCubeRocketSprite,
+            greenCubeRocketSprite,
+            blueCubeRocketSprite,
+            yellowCubeRocketSprite
+        );
+
         boardScript.SetArtifactSprites(horizontalRocketSprite, verticalRocketSprite);
 
         boardScript.SetObstacleSprites(
