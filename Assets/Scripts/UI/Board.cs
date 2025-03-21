@@ -1,9 +1,9 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Board : MonoBehaviour {
+    /* Prefabs */
     private GameObject particleSystemPrefab;
 
     /* Sprite Containers */
@@ -127,7 +127,7 @@ public class Board : MonoBehaviour {
                 break;
             case "rand":
                 string[] colors = { "r", "g", "b", "y" };
-                SpawnItemFromType(x, y, colors[UnityEngine.Random.Range(0, colors.Length)]);
+                SpawnItemFromType(x, y, colors[Random.Range(0, colors.Length)]);
                 return;
             case "vro":
                 type = CellItemType.VerticalRocket;
@@ -153,7 +153,6 @@ public class Board : MonoBehaviour {
                 return; // Empty cell
         }
 
-        // For cubes, get sprites from the dictionaries
         if (IsCubeType(type)) {
             sprite = cubeSprites[type];
             crackSprite = crackSprites[type];
@@ -182,7 +181,12 @@ public class Board : MonoBehaviour {
         SpriteRenderer spriteRenderer = item.AddComponent<SpriteRenderer>();
         spriteRenderer.sortingOrder = y + 1;
         
-        ScaleSpriteToFit(item, sprite, cellSize);
+        ScaleSpriteToFit(
+            item, 
+            sprite, 
+            cellSize,
+            type == CellItemType.VerticalRocket
+        );
         
         CellItem itemComponent = item.AddComponent<CellItem>();
         itemComponent.SetSprites(sprite, crackSprite);
@@ -474,11 +478,12 @@ public class Board : MonoBehaviour {
         return x >= 0 && x < gridWidth && y >= 0 && y < gridHeight;
     }
 
-    private void ScaleSpriteToFit(GameObject item, Sprite sprite, float targetSize) {
+    private void ScaleSpriteToFit(GameObject item, Sprite sprite, float targetSize, bool shouldScaleForHeight = false) {
         if (sprite == null) return;
         
         float spriteWidth = sprite.bounds.size.x;
-        float scale = targetSize / spriteWidth;
+        float spriteHeight = sprite.bounds.size.y;
+        float scale = targetSize / (shouldScaleForHeight ? spriteHeight : spriteWidth);
 
         item.transform.localScale = new Vector3(scale, scale, 1f);
     }

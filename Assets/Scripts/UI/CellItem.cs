@@ -23,10 +23,9 @@ public class CellItem : MonoBehaviour {
     private Sprite originalSprite;
     private Sprite rocketStateSprite;
     private Sprite damagedSprite;
-    private Board board;
     private Sprite crackSprite;
+    private Board board;
     private GameObject particleSystemPrefab;
-
     
     public int X { get => x; }
     public int Y { get => y; }
@@ -37,7 +36,10 @@ public class CellItem : MonoBehaviour {
     
     private void Start() {
         board = GetComponentInParent<Board>();
-        
+        AddCollider();
+    }
+    
+    private void AddCollider() {
         BoxCollider2D collider = gameObject.AddComponent<BoxCollider2D>();        
         collider.size = new Vector2(1f, 1.15f);
         collider.offset = new Vector2(0f, -0.15f);
@@ -50,7 +52,6 @@ public class CellItem : MonoBehaviour {
 
         this.health = type == CellItemType.Vase ? 2 : 1;
         
-        
         if (spriteRenderer != null && originalSprite != null) {
             spriteRenderer.sprite = originalSprite;
         }
@@ -59,6 +60,11 @@ public class CellItem : MonoBehaviour {
     public void SetSprites(Sprite sprite, Sprite crackSprite) {
         this.originalSprite = sprite;
         this.crackSprite = crackSprite;
+        
+        // Apply sprite immediately if renderer exists
+        if (spriteRenderer != null && sprite != null) {
+            spriteRenderer.sprite = sprite;
+        }
     }
 
     public void SetRocketStateSprite(Sprite rocketStateSprite) {
@@ -82,7 +88,6 @@ public class CellItem : MonoBehaviour {
         return type;
     }
     
-    
     public bool CanFall() {
         return IsCube() || IsRocket() || type == CellItemType.Vase;
     }
@@ -92,7 +97,7 @@ public class CellItem : MonoBehaviour {
         
         if (health <= 0) return true;
 
-        if (type == CellItemType.Vase && damagedSprite != null && spriteRenderer != null)  {
+        if (type == CellItemType.Vase && damagedSprite != null && spriteRenderer != null) {
             RenderDamagedVaseSprite();
         }
         
@@ -100,7 +105,7 @@ public class CellItem : MonoBehaviour {
     }
     
     public void RenderOriginalSprite() {
-        if (IsObstacle() ||spriteRenderer.sprite == originalSprite) return;
+        if (IsObstacle() || spriteRenderer.sprite == originalSprite) return;
         spriteRenderer.sprite = originalSprite;
     }
 
@@ -115,6 +120,8 @@ public class CellItem : MonoBehaviour {
     }
 
     public void InstantiateParticleSystem() {
+        if (particleSystemPrefab == null || crackSprite == null) return;
+        
         GameObject particleInstance = Instantiate(particleSystemPrefab, transform.position, Quaternion.identity);
         
         ParticleSystem particleSystem = particleInstance.GetComponent<ParticleSystem>();
@@ -131,14 +138,13 @@ public class CellItem : MonoBehaviour {
             Debug.LogWarning("Particle system component not found on prefab");
             Destroy(particleInstance, 2f);
         }
-        
     }
     
-    private void OnMouseDown() { board?.TryBlast(x, y); }
+    private void OnMouseDown() { 
+        board?.TryBlast(x, y); 
+    }
 
-
-    /* Helpers */
-
+    /* Type Checking Helpers */
     public bool IsCube() {
         return type == CellItemType.RedCube || 
                type == CellItemType.GreenCube || 
