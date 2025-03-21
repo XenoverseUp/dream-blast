@@ -71,6 +71,14 @@ public class Board : MonoBehaviour {
     public void SetParticleSystemPrefab(GameObject prefab) {
         this.particleSystemPrefab = prefab;
     }
+
+    public Sprite GetHorizontalRocketSprite() {
+        return horizontalRocketSprite;
+    }
+
+    public Sprite GetVerticalRocketSprite() {
+        return verticalRocketSprite;
+    }
     
     public void Initialize(float cellSize) {
         this.cellSize = cellSize;
@@ -240,18 +248,22 @@ public class Board : MonoBehaviour {
                 return false;
             }
             
-            ProcessConnectedCubes(connectedCells);
+            bool shouldCreateRocket = connectedCells.Count >= 4;
+            Vector2Int clickPosition = new(x, y);
+            
+            ProcessConnectedCubes(connectedCells, clickPosition, shouldCreateRocket, itemType);
             return true;
         } else if (item.IsRocket()) {
-            Debug.Log("Rocket clicked, but rocket functionality is disabled");
+            Debug.Log("Rocket clicked - functionality will be implemented later");
             return false;
         }
         
         return false;
     }
 
-    private void ProcessConnectedCubes(HashSet<CellItem> connectedCells) {
+    private void ProcessConnectedCubes(HashSet<CellItem> connectedCells, Vector2Int clickPosition, bool createRocket, CellItemType sourceType) {
         HashSet<Vector2Int> affectedObstacles = new HashSet<Vector2Int>();
+        
         foreach (CellItem cell in connectedCells) {
             AnimationManager.Instance.PlayDestroyBlock(cell.gameObject).setOnComplete(() => RemoveItem(cell.X, cell.Y));
             cell.InstantiateParticleSystem();
@@ -262,9 +274,36 @@ public class Board : MonoBehaviour {
         
         LevelManager.Instance.UpdateObstacleCountMap(box, stone, vase);
         LevelManager.Instance.SpendMove();
-                    
-        StartCoroutine(ProcessFallingItemsAfterDelay(0.3f));
+        
+        if (createRocket) {
+            StartCoroutine(CreateRocketWithDelay(clickPosition.x, clickPosition.y, 0.3f));
+        } else {
+            StartCoroutine(ProcessFallingItemsAfterDelay(0.3f));
+        }
     }
+
+    private IEnumerator CreateRocketWithDelay(int x, int y, float delay) {
+        yield return new WaitForSeconds(0.3f);
+        
+        bool isHorizontal = Random.Range(0, 2) == 0;
+        CellItemType rocketType = isHorizontal ? CellItemType.HorizontalRocket : CellItemType.VerticalRocket;
+        Sprite rocketSprite = isHorizontal ? horizontalRocketSprite : verticalRocketSprite;
+        
+        SpawnItem(x, y, rocketType, rocketSprite, null, null);
+        
+        if (grid[x, y] != null) {
+            AnimationManager.Instance.PlayRocketCreation(grid[x, y].gameObject);
+        }
+
+        
+        isFalling = true;
+        yield return StartCoroutine(ProcessFallingItems());
+        isFalling = false;
+
+        RenderRocketStateSprites();
+
+    }
+
 
     /* Animations & New Block Spawning */
     private IEnumerator ProcessFallingItemsAfterDelay(float delay) {

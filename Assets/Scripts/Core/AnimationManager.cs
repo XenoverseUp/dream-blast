@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class AnimationManager : MonoBehaviour {
@@ -10,6 +11,24 @@ public class AnimationManager : MonoBehaviour {
     private void Awake() {       
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+    }
+
+    public LTDescr PlayRocketCreation(GameObject rocketObject) {
+        if (rocketObject == null) return null;
+        
+        Vector3 originalScale = rocketObject.transform.localScale;
+        
+        rocketObject.transform.localScale = Vector3.zero;
+        rocketObject.transform.rotation = Quaternion.Euler(0, 0, Random.Range(-20f, 20f));
+        
+        LTDescr scaleTween = LeanTween.scale(rocketObject, originalScale, 0.25f)
+            .setEase(LeanTweenType.easeOutBack)
+            .setOvershoot(1.2f);
+        
+        LeanTween.rotateZ(rocketObject, 0, 0.2f)
+            .setEase(LeanTweenType.easeOutQuad);
+        
+        return scaleTween;
     }
 
     public LTDescr PlaySwitchToRocketState(GameObject gameObject) {
@@ -77,6 +96,8 @@ public class AnimationManager : MonoBehaviour {
         
         return fadeTween;
     }
+
+    /* Helpers */
 
     /* Lerp Without Clamp */
     public Vector3 LerpWithoutClamp(Vector3 a, Vector3 b, float t) { return a + (b - a) * t; }

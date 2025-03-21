@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public enum CellItemType {
@@ -61,7 +62,6 @@ public class CellItem : MonoBehaviour {
         this.originalSprite = sprite;
         this.crackSprite = crackSprite;
         
-        // Apply sprite immediately if renderer exists
         if (spriteRenderer != null && sprite != null) {
             spriteRenderer.sprite = sprite;
         }
@@ -137,6 +137,31 @@ public class CellItem : MonoBehaviour {
         } else {
             Debug.LogWarning("Particle system component not found on prefab");
             Destroy(particleInstance, 2f);
+        }
+    }
+
+    public void ConvertToRocket(bool isHorizontal) {
+        this.type = isHorizontal ? CellItemType.HorizontalRocket : CellItemType.VerticalRocket;
+        
+        if (spriteRenderer != null) {
+            spriteRenderer.sprite = isHorizontal ? board.GetHorizontalRocketSprite() : board.GetVerticalRocketSprite();
+        }
+    }
+
+    public void PlayRocketFormationEffect() {        
+        if (spriteRenderer != null) {
+            Color originalColor = spriteRenderer.color;
+            
+            spriteRenderer.color = Color.white;
+            
+            StartCoroutine(ResetColorAfterDelay(originalColor, 0.2f));
+        }
+    }
+
+    private IEnumerator ResetColorAfterDelay(Color originalColor, float delay) {
+        yield return new WaitForSeconds(delay);
+        if (spriteRenderer != null) {
+            spriteRenderer.color = originalColor;
         }
     }
     
