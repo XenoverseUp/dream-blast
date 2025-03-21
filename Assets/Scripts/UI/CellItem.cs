@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 
 public enum CellItemType {
@@ -26,6 +25,7 @@ public class CellItem : MonoBehaviour {
     private Sprite damagedSprite;
     private Sprite crackSprite;
     private Board board;
+    private BlockFactory blockFactory;
     private GameObject particleSystemPrefab;
     
     public int X { get => x; }
@@ -37,13 +37,15 @@ public class CellItem : MonoBehaviour {
     
     private void Start() {
         board = GetComponentInParent<Board>();
-        AddCollider();
-    }
-    
-    private void AddCollider() {
+        blockFactory = GetComponentInParent<BlockFactory>();
+
         BoxCollider2D collider = gameObject.AddComponent<BoxCollider2D>();        
         collider.size = new Vector2(1f, 1.15f);
         collider.offset = new Vector2(0f, -0.15f);
+    }
+    
+    private void OnMouseDown() { 
+        board?.TryBlast(x, y); 
     }
     
     public void Initialize(CellItemType type, int x, int y) {
@@ -143,48 +145,21 @@ public class CellItem : MonoBehaviour {
     public void ConvertToRocket(bool isHorizontal) {
         this.type = isHorizontal ? CellItemType.HorizontalRocket : CellItemType.VerticalRocket;
         
-        if (spriteRenderer != null) {
-            spriteRenderer.sprite = isHorizontal ? board.GetHorizontalRocketSprite() : board.GetVerticalRocketSprite();
+        if (spriteRenderer != null && blockFactory != null) {
+            spriteRenderer.sprite = blockFactory.GetSpriteForRocketType(this.type);
         }
-    }
-
-    public void PlayRocketFormationEffect() {        
-        if (spriteRenderer != null) {
-            Color originalColor = spriteRenderer.color;
-            
-            spriteRenderer.color = Color.white;
-            
-            StartCoroutine(ResetColorAfterDelay(originalColor, 0.2f));
-        }
-    }
-
-    private IEnumerator ResetColorAfterDelay(Color originalColor, float delay) {
-        yield return new WaitForSeconds(delay);
-        if (spriteRenderer != null) {
-            spriteRenderer.color = originalColor;
-        }
-    }
-    
-    private void OnMouseDown() { 
-        board?.TryBlast(x, y); 
     }
 
     /* Type Checking Helpers */
     public bool IsCube() {
-        return type == CellItemType.RedCube || 
-               type == CellItemType.GreenCube || 
-               type == CellItemType.BlueCube || 
-               type == CellItemType.YellowCube;
+        return ItemTypeParserManager.Instance.IsCube(this.type);
     }
     
     public bool IsRocket() {
-        return type == CellItemType.HorizontalRocket || 
-               type == CellItemType.VerticalRocket;
+        return ItemTypeParserManager.Instance.IsRocket(this.type);
     }
     
     public bool IsObstacle() {
-        return type == CellItemType.Box || 
-               type == CellItemType.Stone || 
-               type == CellItemType.Vase;
+        return ItemTypeParserManager.Instance.IsObstacle(this.type);
     }
 }

@@ -3,11 +3,6 @@ using TMPro;
 using System.Collections.Generic;
 using UnityEngine.UI;
 
-public enum ObstacleType {
-    BoxObstacle,
-    VaseObstacle,
-    StoneObstacle
-}
 
 public class GoalItem : MonoBehaviour, IActionListener {
     [Header("References")]
@@ -15,7 +10,7 @@ public class GoalItem : MonoBehaviour, IActionListener {
     [SerializeField] private TMP_Text countText;
     
     [Header("Configuration")]
-    [SerializeField] public ObstacleType obstacleType = ObstacleType.BoxObstacle;
+    [SerializeField] public CellItemType obstacleType = CellItemType.Box;
     [SerializeField] public Sprite iconSprite;
     
     void Awake() {
@@ -39,11 +34,7 @@ public class GoalItem : MonoBehaviour, IActionListener {
         LevelManager.Instance.Unsubscribe(this); 
     }
 
-    public void OnAction(int moveCount, Dictionary<string, int> blocks) {
-        countText?.SetText(blocks.GetValueOrDefault(GetObstacleTypeString(), 0).ToString());
-    }
-
-    public void Initialize(ObstacleType type, Sprite sprite) {
+    public void Initialize(CellItemType type, Sprite sprite) {
         obstacleType = type;
         iconSprite = sprite;
         UpdateIcon();
@@ -55,12 +46,8 @@ public class GoalItem : MonoBehaviour, IActionListener {
         }
     }
 
-    private string GetObstacleTypeString() {
-        return obstacleType switch {
-            ObstacleType.BoxObstacle => "bo",
-            ObstacleType.VaseObstacle => "v",
-            ObstacleType.StoneObstacle => "s",
-            _ => "bo",
-        };
+
+    public void OnAction(int moveCount, Dictionary<CellItemType, int> obstacles) {
+        countText?.SetText(obstacles.GetValueOrDefault(obstacleType, 0).ToString());
     }
 }

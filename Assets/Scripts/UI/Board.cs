@@ -3,17 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Board : MonoBehaviour {
-    /* Prefabs */
-    private GameObject particleSystemPrefab;
-
-    /* Sprite Containers */
-    private Dictionary<CellItemType, Sprite> cubeSprites = new Dictionary<CellItemType, Sprite>();
-    private Dictionary<CellItemType, Sprite> rocketStateSprites = new Dictionary<CellItemType, Sprite>();
-    private Dictionary<CellItemType, Sprite> crackSprites = new Dictionary<CellItemType, Sprite>();
-    private Dictionary<CellItemType, Sprite> obstacleSprites = new Dictionary<CellItemType, Sprite>();
-    private Sprite damagedVaseSprite;
-    private Sprite horizontalRocketSprite, verticalRocketSprite;
-
+    private BlockFactory blockFactory;
+    
     private int gridWidth;
     private int gridHeight;
     private float cellSize;
@@ -29,69 +20,30 @@ public class Board : MonoBehaviour {
         new(-1, 0)
     };
 
-    /* Setters and Initializers */
-    public void SetBlockSprites(Sprite redCube, Sprite greenCube, Sprite blueCube, Sprite yellowCube) {
-        cubeSprites[CellItemType.RedCube] = redCube;
-        cubeSprites[CellItemType.GreenCube] = greenCube;
-        cubeSprites[CellItemType.BlueCube] = blueCube;
-        cubeSprites[CellItemType.YellowCube] = yellowCube;
-    }
+    public int GridHeight => gridHeight;
+    public int GridWidth => gridWidth;
 
-    public void SetRocketStateSprites(
-        Sprite redRocketStateSprite, 
-        Sprite greenRocketStateSprite, 
-        Sprite blueRocketStateSprite, 
-        Sprite yellowRocketStateSprite
-    ) {
-        rocketStateSprites[CellItemType.RedCube] = redRocketStateSprite;
-        rocketStateSprites[CellItemType.GreenCube] = greenRocketStateSprite;
-        rocketStateSprites[CellItemType.BlueCube] = blueRocketStateSprite;
-        rocketStateSprites[CellItemType.YellowCube] = yellowRocketStateSprite;
-    }
-
-    public void SetObstacleSprites(Sprite box, Sprite stone, Sprite vase, Sprite damagedVase) {
-        obstacleSprites[CellItemType.Box] = box;
-        obstacleSprites[CellItemType.Stone] = stone;
-        obstacleSprites[CellItemType.Vase] = vase;
-        this.damagedVaseSprite = damagedVase;
-    }
-    
-    public void SetCrackSprites(Sprite redCrack, Sprite greenCrack, Sprite blueCrack, Sprite yellowCrack) {
-        crackSprites[CellItemType.RedCube] = redCrack;
-        crackSprites[CellItemType.GreenCube] = greenCrack;
-        crackSprites[CellItemType.BlueCube] = blueCrack;
-        crackSprites[CellItemType.YellowCube] = yellowCrack;
-    }
-
-    public void SetArtifactSprites(Sprite horizontalRocket, Sprite verticalRocket) {
-        this.horizontalRocketSprite = horizontalRocket;
-        this.verticalRocketSprite = verticalRocket;
-    }
-    
-    public void SetParticleSystemPrefab(GameObject prefab) {
-        this.particleSystemPrefab = prefab;
-    }
-
-    public Sprite GetHorizontalRocketSprite() {
-        return horizontalRocketSprite;
-    }
-
-    public Sprite GetVerticalRocketSprite() {
-        return verticalRocketSprite;
-    }
-    
+    /* Initialization */
     public void Initialize(float cellSize) {
         this.cellSize = cellSize;
         this.gridWidth = LevelManager.Instance.GetLevelData().GridWidth;
         this.gridHeight = LevelManager.Instance.GetLevelData().GridHeight;
         
         InitializeGrid();
+        blockFactory.Initialize(this, cellSize);
         PopulateGrid(LevelManager.Instance.GetLevelData().Grid);
     }
 
     /* Grid Actions */
     private void InitializeGrid() {
         grid = new CellItem[gridWidth, gridHeight];
+
+        blockFactory = GetComponent<BlockFactory>();
+        
+        if (blockFactory == null) {
+            Debug.LogError("BlockFactory component is missing. Make sure to add BlockFactory before Board component.");
+            return;
+        }
     }
 
     private void PopulateGrid(List<string> levelGrid) {
@@ -115,109 +67,12 @@ public class Board : MonoBehaviour {
     }
 
     private void SpawnItemFromType(int x, int y, string itemType) {
-        CellItemType type = CellItemType.Empty;
-        Sprite sprite = null;
-        Sprite crackSprite = null;
-        Sprite rocketStateSprite = null;
-        
-        switch (itemType) {
-            case "r":
-                type = CellItemType.RedCube;
-                break;
-            case "g":
-                type = CellItemType.GreenCube;
-                break;
-            case "b":
-                type = CellItemType.BlueCube;
-                break;
-            case "y":
-                type = CellItemType.YellowCube;
-                break;
-            case "rand":
-                string[] colors = { "r", "g", "b", "y" };
-                SpawnItemFromType(x, y, colors[Random.Range(0, colors.Length)]);
-                return;
-            case "vro":
-                type = CellItemType.VerticalRocket;
-                sprite = verticalRocketSprite;
-                break;
-            case "hro":
-                type = CellItemType.HorizontalRocket;
-                sprite = horizontalRocketSprite;
-                break;
-            case "bo":
-                type = CellItemType.Box;
-                sprite = obstacleSprites[CellItemType.Box];
-                break;
-            case "s":
-                type = CellItemType.Stone;
-                sprite = obstacleSprites[CellItemType.Stone];
-                break;
-            case "v":
-                type = CellItemType.Vase;
-                sprite = obstacleSprites[CellItemType.Vase];
-                break;
-            default:
-                return; // Empty cell
-        }
+        if (string.IsNullOrEmpty(itemType)) return;
 
-        if (IsCubeType(type)) {
-            sprite = cubeSprites[type];
-            crackSprite = crackSprites[type];
-            rocketStateSprite = rocketStateSprites[type];
+        CellItem itemComponent = blockFactory.CreateItemFromTypeString(x, y, itemType);
+        if (itemComponent != null) {
+            grid[x, y] = itemComponent;
         }
-        
-        SpawnItem(x, y, type, sprite, crackSprite, rocketStateSprite);
-    }
-    
-    private CellItem CreateCellItem(int x, int y, CellItemType type, Sprite sprite, Sprite crackSprite, Sprite rocketStateSprite, bool isNewCube = false) {
-        Vector3 position = isNewCube ? GetWorldPosition(x, gridHeight) : GetLocalPosition(x, y);
-        
-        GameObject item = new GameObject($"Block_{type}");
-        
-        RectTransform itemRect = item.AddComponent<RectTransform>();
-        if (!isNewCube) {
-            itemRect.anchoredPosition = new Vector2(position.x, position.y);
-        }
-        itemRect.sizeDelta = new Vector2(cellSize, cellSize);
-        
-        item.transform.SetParent(transform, false);
-        if (isNewCube) {
-            item.transform.position = position;
-        }
-        
-        SpriteRenderer spriteRenderer = item.AddComponent<SpriteRenderer>();
-        spriteRenderer.sortingOrder = y + 1;
-        
-        ScaleSpriteToFit(
-            item, 
-            sprite, 
-            cellSize,
-            type == CellItemType.VerticalRocket
-        );
-        
-        CellItem itemComponent = item.AddComponent<CellItem>();
-        itemComponent.SetSprites(sprite, crackSprite);
-        itemComponent.SetParticleSystemPrefab(particleSystemPrefab);
-        
-        if (type == CellItemType.Vase) {
-            itemComponent.SetDamagedSprite(damagedVaseSprite);
-        }
-        
-        itemComponent.Initialize(type, x, y);
-
-        if (IsCubeType(type)) {
-            itemComponent.SetRocketStateSprite(rocketStateSprite);
-        }
-              
-        return itemComponent;
-    }
-    
-    public void SpawnItem(int x, int y, CellItemType type, Sprite sprite, Sprite crackSprite, Sprite rocketStateSprite) {
-        if (type == CellItemType.Empty) return;
-
-        CellItem itemComponent = CreateCellItem(x, y, type, sprite, crackSprite, rocketStateSprite);
-        grid[x, y] = itemComponent;
     }
 
     /* Blasting Mechanic */
@@ -287,23 +142,20 @@ public class Board : MonoBehaviour {
         
         bool isHorizontal = Random.Range(0, 2) == 0;
         CellItemType rocketType = isHorizontal ? CellItemType.HorizontalRocket : CellItemType.VerticalRocket;
-        Sprite rocketSprite = isHorizontal ? horizontalRocketSprite : verticalRocketSprite;
         
-        SpawnItem(x, y, rocketType, rocketSprite, null, null);
+        CellItem rocketItem = blockFactory.CreateItem(x, y, rocketType);
+        grid[x, y] = rocketItem;
         
-        if (grid[x, y] != null) {
-            AnimationManager.Instance.PlayRocketCreation(grid[x, y].gameObject);
+        if (rocketItem != null) {
+            AnimationManager.Instance.PlayRocketCreation(rocketItem.gameObject);
         }
-
         
         isFalling = true;
         yield return StartCoroutine(ProcessFallingItems());
         isFalling = false;
 
         RenderRocketStateSprites();
-
     }
-
 
     /* Animations & New Block Spawning */
     private IEnumerator ProcessFallingItemsAfterDelay(float delay) {
@@ -385,16 +237,10 @@ public class Board : MonoBehaviour {
             
             if (emptyCellsToFill.Count > 0) {
                 foreach (int targetY in emptyCellsToFill) {
-                    CellItemType cubeType = GetRandomCubeType();
+                    CellItem newCube = blockFactory.CreateRandomCube(x, targetY, true);
+                    grid[x, targetY] = newCube;
                     
-                    Sprite cubeSprite = cubeSprites[cubeType];
-                    Sprite crackSprite = crackSprites[cubeType];
-                    Sprite rocketStateSprite = rocketStateSprites[cubeType];
-                    
-                    CellItem itemComponent = CreateCellItem(x, targetY, cubeType, cubeSprite, crackSprite, rocketStateSprite, true);
-                    grid[x, targetY] = itemComponent;
-                    
-                    StartCoroutine(AnimateNewCubeFall(itemComponent.gameObject, itemComponent, 
+                    StartCoroutine(AnimateNewCubeFall(newCube.gameObject, newCube, 
                                                      GetWorldPosition(x, gridHeight), 
                                                      GetWorldPosition(x, targetY)));
                     
@@ -495,36 +341,8 @@ public class Board : MonoBehaviour {
     }
 
     /* Helper Methods */
-    private CellItemType GetRandomCubeType() {
-        CellItemType[] cubeTypes = new CellItemType[] {
-            CellItemType.RedCube,
-            CellItemType.GreenCube,
-            CellItemType.BlueCube,
-            CellItemType.YellowCube
-        };
-        
-        return cubeTypes[UnityEngine.Random.Range(0, cubeTypes.Length)];
-    }
-
-    private bool IsCubeType(CellItemType type) {
-        return type == CellItemType.RedCube || 
-               type == CellItemType.GreenCube || 
-               type == CellItemType.BlueCube || 
-               type == CellItemType.YellowCube;
-    }
-
     private bool IsWithinGrid(int x, int y) {
         return x >= 0 && x < gridWidth && y >= 0 && y < gridHeight;
-    }
-
-    private void ScaleSpriteToFit(GameObject item, Sprite sprite, float targetSize, bool shouldScaleForHeight = false) {
-        if (sprite == null) return;
-        
-        float spriteWidth = sprite.bounds.size.x;
-        float spriteHeight = sprite.bounds.size.y;
-        float scale = targetSize / (shouldScaleForHeight ? spriteHeight : spriteWidth);
-
-        item.transform.localScale = new Vector3(scale, scale, 1f);
     }
 
     public Vector3 GetLocalPosition(int x, int y) {

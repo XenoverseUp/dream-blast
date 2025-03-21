@@ -30,12 +30,16 @@ public class LevelData {
         return "rand";
     }
 
-    public Dictionary<string, int> GetObstacleCountMap() {
-        Dictionary<string, int> obstacleCountMap = new Dictionary<string, int>();
+    public Dictionary<CellItemType, int> GetObstacleCountMap() {
+        Dictionary<CellItemType, int> obstacleCountMap = new Dictionary<CellItemType, int>();
 
         foreach (string item in grid) {
             if (!obstacles.Contains(item)) continue;
-            obstacleCountMap[item] = obstacleCountMap.GetValueOrDefault(item, 0) + 1;
+
+            CellItemType type = ItemTypeParserManager.Instance.ParseType(item);
+            if (type == CellItemType.Empty) continue;
+
+            obstacleCountMap[type] = obstacleCountMap.GetValueOrDefault(type, 0) + 1;
         }
 
         return obstacleCountMap;

@@ -10,7 +10,7 @@ public class LevelManager : MonoBehaviour {
     
     private int moveCount = 0;
     private LevelData levelData;
-    private Dictionary<string, int> obstacleCountMap = new Dictionary<string, int>();
+    private Dictionary<CellItemType, int> obstacleCountMap = new Dictionary<CellItemType, int>();
     private bool loaded = false;
     
     private void Awake() {
@@ -66,9 +66,9 @@ public class LevelManager : MonoBehaviour {
         if (listeners.Contains(listener)) listeners.Remove(listener);
     }
 
-    public Dictionary<string, int> GetBlocks() { return this.obstacleCountMap; }
+    public Dictionary<CellItemType, int> GetBlocks() { return this.obstacleCountMap; }
     
-    public List<string> GetObstacleTypes() { return new List<string>(obstacleCountMap.Keys); }
+    public List<CellItemType> GetObstacleTypes() { return new List<CellItemType>(obstacleCountMap.Keys); }
 
     public LevelData GetLevelData() { return this.levelData; }
 
@@ -78,8 +78,13 @@ public class LevelManager : MonoBehaviour {
     }
 
     public void UpdateObstacleCountMap(int box, int stone, int vase) {
-        if (obstacleCountMap.ContainsKey("bo")) obstacleCountMap["bo"] = box;
-        if (obstacleCountMap.ContainsKey("s")) obstacleCountMap["s"] = stone;
-        if (obstacleCountMap.ContainsKey("v")) obstacleCountMap["v"] = vase;
+        if (obstacleCountMap.ContainsKey(CellItemType.Box)) 
+            obstacleCountMap[CellItemType.Box] = box;
+            
+        if (obstacleCountMap.ContainsKey(CellItemType.Stone)) 
+            obstacleCountMap[CellItemType.Stone] = stone;
+        
+        if (obstacleCountMap.ContainsKey(CellItemType.Vase)) 
+            obstacleCountMap[CellItemType.Vase] = vase;
     }
 }

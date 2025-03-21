@@ -92,6 +92,7 @@ public class GamePanel : MonoBehaviour {
         
         boardPanel = new GameObject("BoardPanel");
         boardPanel.transform.SetParent(outerPanel.transform, false);
+
         
         RectTransform boardRect = boardPanel.AddComponent<RectTransform>();
         
@@ -101,41 +102,42 @@ public class GamePanel : MonoBehaviour {
         boardRect.anchorMax = new Vector2(0.5f, 0.5f);
         boardRect.pivot = new Vector2(0.5f, 0.5f);
         boardRect.anchoredPosition = Vector2.zero;
+
         
-        Board boardScript = boardPanel.AddComponent<Board>();
-        
-        boardScript.SetBlockSprites(
+        BlockFactory blockFactory = boardPanel.AddComponent<BlockFactory>();
+       
+        blockFactory.SetBlockSprites(
             redCubeSprite,
             greenCubeSprite,
             blueCubeSprite,
             yellowCubeSprite
         );
 
-        boardScript.SetRocketStateSprites(
+        blockFactory.SetRocketStateSprites(
             redCubeRocketSprite,
             greenCubeRocketSprite,
             blueCubeRocketSprite,
             yellowCubeRocketSprite
         );
 
-        boardScript.SetArtifactSprites(horizontalRocketSprite, verticalRocketSprite);
+        blockFactory.SetRocketSprites(horizontalRocketSprite, verticalRocketSprite);
 
-        boardScript.SetObstacleSprites(
+        blockFactory.SetObstacleSprites(
             boxSprite,
             stoneSprite,
             vaseSprite,
             damagedVaseSprite
         );
 
-        boardScript.SetCrackSprites(
+        blockFactory.SetCrackSprites(
             redCrack, 
             greenCrack, 
             blueCrack,
             yellowCrack
         );
     
-        boardScript.SetParticleSystemPrefab(particleSystemPrefab);
+        blockFactory.SetParticleSystemPrefab(particleSystemPrefab);
 
-        boardScript.Initialize(cellSize);
+        boardPanel.AddComponent<Board>().Initialize(cellSize);
     }
 }

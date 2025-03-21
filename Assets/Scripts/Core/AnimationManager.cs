@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 
 public class AnimationManager : MonoBehaviour {
@@ -35,9 +34,9 @@ public class AnimationManager : MonoBehaviour {
         LeanTween.cancel(gameObject);
 
         Vector3 originalScale = gameObject.transform.localScale;
-        gameObject.transform.localScale = 1.2f * originalScale;
+        gameObject.transform.localScale = 1.15f * originalScale;
 
-        return LeanTween.scale(gameObject, originalScale, 0.4f).setEaseOutBounce();
+        return LeanTween.scale(gameObject, originalScale, 0.1f);
     }
 
     public LTDescr PlayUpdateText(GameObject gameObject) {

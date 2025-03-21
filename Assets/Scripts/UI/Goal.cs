@@ -18,7 +18,7 @@ public class Goal : MonoBehaviour {
     [SerializeField] private float tripleItemScale = 0.5f;
     [SerializeField] private float spacing = 10f;
     
-    private Dictionary<string, GoalItem> goalItems = new Dictionary<string, GoalItem>();
+    private Dictionary<CellItemType, GoalItem> goalItems = new Dictionary<CellItemType, GoalItem>();
     private RectTransform containerRect;
     
     void Awake() {
@@ -29,7 +29,7 @@ public class Goal : MonoBehaviour {
     }
     
     void Start() {
-        List<string> obstacleTypes = LevelManager.Instance.GetObstacleTypes();
+        List<CellItemType> obstacleTypes = LevelManager.Instance.GetObstacleTypes();
         
         switch (obstacleTypes.Count) {
             case 1:
@@ -48,7 +48,7 @@ public class Goal : MonoBehaviour {
     }
     
 
-    private void CreateSingleItemLayout(string blockType) {
+    private void CreateSingleItemLayout(CellItemType blockType) {
         GoalItem goalItem = CreateGoalItem(blockType);
         GameObject itemObj = goalItem.gameObject;
         RectTransform rectTransform = itemObj.GetComponent<RectTransform>();
@@ -62,7 +62,7 @@ public class Goal : MonoBehaviour {
         rectTransform.pivot = new Vector2(0.5f, 0.5f);
     }
     
-    private void CreateDoubleItemLayout(string blockType1, string blockType2) {
+    private void CreateDoubleItemLayout(CellItemType blockType1, CellItemType blockType2) {
         HorizontalLayoutGroup horizontalLayout = gameObject.AddComponent<HorizontalLayoutGroup>();
         horizontalLayout.spacing = spacing;
         horizontalLayout.childAlignment = TextAnchor.MiddleCenter;
@@ -87,7 +87,7 @@ public class Goal : MonoBehaviour {
         rect2.pivot = new Vector2(0.5f, 0.5f);
     }
     
-    private void CreateTripleItemLayout(string blockType1, string blockType2, string blockType3) {
+    private void CreateTripleItemLayout(CellItemType blockType1, CellItemType blockType2, CellItemType blockType3) {
         GameObject topRowObj = new GameObject("TopRow", typeof(RectTransform), typeof(HorizontalLayoutGroup));
         RectTransform topRowRect = topRowObj.GetComponent<RectTransform>();
         topRowRect.SetParent(transform, false);
@@ -145,35 +145,30 @@ public class Goal : MonoBehaviour {
         rect.pivot = new Vector2(0.5f, 0.5f);
     }
     
-    private GoalItem CreateGoalItem(string blockType, Transform parent = null) {
+    private GoalItem CreateGoalItem(CellItemType blockType, Transform parent = null) {
         if (parent == null) parent = transform;
         
         GameObject itemObj = Instantiate(goalItemPrefab, parent);
         GoalItem goalItem = itemObj.GetComponent<GoalItem>();
         
-        ObstacleType obstacleType;
         Sprite sprite;
         
         switch (blockType) {
-            case "bo":
-                obstacleType = ObstacleType.BoxObstacle;
+            case CellItemType.Box:
                 sprite = boxObstacleSprite;
                 break;
-            case "v":
-                obstacleType = ObstacleType.VaseObstacle;
+            case CellItemType.Vase:
                 sprite = vaseObstacleSprite;
                 break;
-            case "s":
-                obstacleType = ObstacleType.StoneObstacle;
+            case CellItemType.Stone:
                 sprite = stoneObstacleSprite;
                 break;
             default:
-                obstacleType = ObstacleType.BoxObstacle;
                 sprite = boxObstacleSprite;
                 break;
         }
         
-        goalItem.Initialize(obstacleType, sprite);
+        goalItem.Initialize(blockType, sprite);
         goalItems[blockType] = goalItem;
         return goalItem;
     }
