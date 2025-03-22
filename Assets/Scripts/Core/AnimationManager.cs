@@ -6,6 +6,8 @@ public class AnimationManager : MonoBehaviour {
     [SerializeField] public float blockShakeAmount = 15f;
     [SerializeField] public float blockFallSpeed = 7.5f;
 
+    public delegate void OnCompleteCallback();
+
         
     private void Awake() {       
         if (Instance == null) Instance = this;
@@ -96,10 +98,32 @@ public class AnimationManager : MonoBehaviour {
         return fadeTween;
     }
 
-    /* Helpers */
+    public float AnimateCubeFall(GameObject item, CellItem itemComponent, Vector3 startPos, Vector3 targetPos, OnCompleteCallback callback = null) {
+        if (item == null) return 0f;
+        
+        SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
+        if (renderer != null) 
+            renderer.sortingOrder = itemComponent.Y + 1;
+        
+        float speed = blockFallSpeed;
+        float distance = Vector3.Distance(startPos, targetPos);
+        float duration = distance / speed;
+        
+        LeanTween.value(item, 0f, 1f, duration)
+            .setOnUpdate((float t) => {
+                item.transform.position = LerpWithoutClamp(startPos, targetPos, EaseOutBack(t));
+            })
+            .setOnComplete(() => {
+                item.transform.position = targetPos;
+                if (callback != null) callback();
+            });
 
-    /* Lerp Without Clamp */
-    public Vector3 LerpWithoutClamp(Vector3 a, Vector3 b, float t) { return a + (b - a) * t; }
+
+        return duration;        
+    }
+
+
+    private Vector3 LerpWithoutClamp(Vector3 a, Vector3 b, float t) { return a + (b - a) * t; }
     
 
     /* Easing Functions */

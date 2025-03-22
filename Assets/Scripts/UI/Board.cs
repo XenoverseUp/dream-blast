@@ -205,30 +205,18 @@ public class Board : MonoBehaviour {
         Vector3 startPos = GetWorldPosition(fromX, fromY);
         Vector3 targetPos = GetWorldPosition(toX, toY);
         
-        float speed = AnimationManager.Instance.blockFallSpeed;
-        float distance = Vector3.Distance(startPos, targetPos);
-        float duration = distance / speed;
-        
-        float elapsedTime = 0f;
-        while (elapsedTime < duration) {
-            if (item == null) yield break;
-            
-            float t = elapsedTime / duration;
-            item.transform.position = AnimationManager.Instance.LerpWithoutClamp(startPos, targetPos, AnimationManager.Instance.EaseOutBack(t));
-            
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-        
-        if (item != null) {
-            item.transform.position = targetPos;
-            
-            SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
-            if (renderer != null) 
-                renderer.sortingOrder = toY + 1;
-        }
+        float duration = AnimationManager.Instance.AnimateCubeFall(item.gameObject, item, startPos, targetPos);
+        yield return new WaitForSeconds(duration);
     }
-    
+
+    private IEnumerator AnimateNewCubeFall(GameObject item, CellItem itemComponent, Vector3 startPos, Vector3 targetPos) {
+        if (item == null) yield return null; 
+
+        float duration = AnimationManager.Instance.AnimateCubeFall(item, itemComponent, startPos, targetPos);
+        yield return new WaitForSeconds(duration);
+    }
+
+        
     private IEnumerator SpawnNewCubesAtTop() {
         bool cubesAdded = false;
         
@@ -252,30 +240,6 @@ public class Board : MonoBehaviour {
         }
         
         if (cubesAdded) yield return new WaitForSeconds(0.3f);
-    }
-        
-    private IEnumerator AnimateNewCubeFall(GameObject item, CellItem itemComponent, Vector3 startPos, Vector3 targetPos) {
-        if (item == null) yield return null; 
-
-        SpriteRenderer renderer = item.GetComponent<SpriteRenderer>();
-        if (renderer != null) 
-            renderer.sortingOrder = itemComponent.Y + 1;
-       
-        float speed = AnimationManager.Instance.blockFallSpeed;
-        float distance = Vector3.Distance(startPos, targetPos);
-        float duration = distance / speed;
-        
-        float elapsedTime = 0f;
-        while (elapsedTime < duration) {
-            
-            float t = elapsedTime / duration;
-            item.transform.position = AnimationManager.Instance.LerpWithoutClamp(startPos, targetPos, AnimationManager.Instance.EaseOutBack(t));
-            
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        item.transform.position = targetPos;
     }
 
     private void CheckAndDamageAdjacentObstacles(int x, int y, HashSet<Vector2Int> processedObstacles) {

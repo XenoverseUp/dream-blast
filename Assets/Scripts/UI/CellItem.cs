@@ -42,8 +42,10 @@ public class CellItem : MonoBehaviour {
         BoxCollider2D collider = gameObject.AddComponent<BoxCollider2D>();        
         collider.size = new Vector2(1f, 1.15f);
         collider.offset = new Vector2(0f, -0.15f);
+
     }
     
+
     private void OnMouseDown() { 
         board?.TryBlast(x, y); 
     }
@@ -139,14 +141,6 @@ public class CellItem : MonoBehaviour {
         } else {
             Debug.LogWarning("Particle system component not found on prefab");
             Destroy(particleInstance, 2f);
-        }
-    }
-
-    public void ConvertToRocket(bool isHorizontal) {
-        this.type = isHorizontal ? CellItemType.HorizontalRocket : CellItemType.VerticalRocket;
-        
-        if (spriteRenderer != null && blockFactory != null) {
-            spriteRenderer.sprite = blockFactory.GetSpriteForRocketType(this.type);
         }
     }
 
