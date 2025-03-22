@@ -205,41 +205,62 @@ public class Board : MonoBehaviour {
         Vector3 startPos = GetWorldPosition(fromX, fromY);
         Vector3 targetPos = GetWorldPosition(toX, toY);
         
-        float duration = AnimationManager.Instance.AnimateCubeFall(item.gameObject, item, startPos, targetPos);
+        float duration = AnimationManager.Instance.AnimateCubeFall(item.gameObject, startPos, targetPos);
         yield return new WaitForSeconds(duration);
     }
 
-    private IEnumerator AnimateNewCubeFall(GameObject item, CellItem itemComponent, Vector3 startPos, Vector3 targetPos) {
-        if (item == null) yield return null; 
-
-        float duration = AnimationManager.Instance.AnimateCubeFall(item, itemComponent, startPos, targetPos);
-        yield return new WaitForSeconds(duration);
-    }
-
-        
     private IEnumerator SpawnNewCubesAtTop() {
         bool cubesAdded = false;
+        List<Coroutine> fallAnimations = new List<Coroutine>();
         
         for (int x = 0; x < gridWidth; x++) {
             List<int> emptyCellsToFill = FindEmptyCellsToFill(x);
             
             if (emptyCellsToFill.Count > 0) {
-                foreach (int targetY in emptyCellsToFill) {
-                    CellItem newCube = blockFactory.CreateRandomCube(x, targetY, true);
-                    grid[x, targetY] = newCube;
-                    
-                    StartCoroutine(AnimateNewCubeFall(newCube.gameObject, newCube, 
-                                                     GetWorldPosition(x, gridHeight), 
-                                                     GetWorldPosition(x, targetY)));
-                    
-                    cubesAdded = true;
-                    
-                    yield return new WaitForSeconds(0.5f / AnimationManager.Instance.blockFallSpeed);
-                }
+                fallAnimations.Add(StartCoroutine(AnimateColumnFall(x, emptyCellsToFill)));
+                cubesAdded = true;
             }
         }
         
+        foreach (var coroutine in fallAnimations) {
+            yield return coroutine;
+        }
+        
         if (cubesAdded) yield return new WaitForSeconds(0.3f);
+    }
+    
+    private IEnumerator AnimateColumnFall(int x, List<int> emptyCellsToFill) {
+        if (emptyCellsToFill.Count == 0) yield break;
+        
+        float fallDistance = Vector3.Distance(
+            GetWorldPosition(x, gridHeight),
+            GetWorldPosition(x, emptyCellsToFill[0])
+        );
+        
+        float maxFallDuration = (emptyCellsToFill.Count - 1) * (0.4f / AnimationManager.Instance.blockFallSpeed) + 
+                               fallDistance / AnimationManager.Instance.blockFallSpeed;
+        
+        for (int i = 0; i < emptyCellsToFill.Count; i++) {
+            int targetY = emptyCellsToFill[i];
+            float spawnDelay = i * (0.4f / AnimationManager.Instance.blockFallSpeed);
+            
+            StartCoroutine(CreateAndAnimateCube(x, targetY, spawnDelay));
+        }
+        
+        yield return new WaitForSeconds(maxFallDuration);
+    }
+    
+    private IEnumerator CreateAndAnimateCube(int x, int targetY, float delay) {
+        yield return new WaitForSeconds(delay);
+        
+        CellItem newCube = blockFactory.CreateRandomCube(x, targetY, true);
+        grid[x, targetY] = newCube;
+        
+        AnimationManager.Instance.AnimateCubeFall(
+            newCube.gameObject,
+            GetWorldPosition(x, gridHeight),
+            GetWorldPosition(x, targetY)
+        );
     }
 
     private void CheckAndDamageAdjacentObstacles(int x, int y, HashSet<Vector2Int> processedObstacles) {
@@ -283,13 +304,11 @@ public class Board : MonoBehaviour {
                     visitedPositions.Add(new Vector2Int(cell.X, cell.Y));
                 }
                 
-                if (connectedCells.Count >= 4) {
-                    foreach (CellItem cell in connectedCells)
-                        cell.RenderRocketSprite();
-                } else {
-                    foreach (CellItem cell in connectedCells)
-                        cell.RenderOriginalSprite();
-                }
+                if (connectedCells.Count >= 4) 
+                    foreach (CellItem cell in connectedCells) cell.RenderRocketStateSprite();
+                else 
+                    foreach (CellItem cell in connectedCells) cell.RenderOriginalSprite();
+                
             }
         }
     }

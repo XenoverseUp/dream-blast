@@ -113,7 +113,7 @@ public class CellItem : MonoBehaviour {
         spriteRenderer.sprite = originalSprite;
     }
 
-    public void RenderRocketSprite() {
+    public void RenderRocketStateSprite() {
         if (IsObstacle() || spriteRenderer.sprite == rocketStateSprite) return;
         spriteRenderer.sprite = rocketStateSprite;
         AnimationManager.Instance.PlaySwitchToRocketState(gameObject);
