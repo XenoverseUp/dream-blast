@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public enum CellItemType {
     Empty,
@@ -25,11 +26,10 @@ public class CellItem : MonoBehaviour {
     private Sprite damagedSprite;
     private Sprite crackSprite;
     private Board board;
-    private BlockFactory blockFactory;
     private GameObject particleSystemPrefab;
     
-    public int X { get => x; }
-    public int Y { get => y; }
+    public int X => x;
+    public int Y => y;
     
     private void Awake() {
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -41,28 +41,38 @@ public class CellItem : MonoBehaviour {
     
     private void Start() {
         board = GetComponentInParent<Board>();
-        blockFactory = GetComponentInParent<BlockFactory>();
     }
 
-    private void OnTriggerEnter2D(Collider2D collision) {
-        HandleRocketHit();
-    }
-
-    private void HandleRocketHit() {
-        if (board == null) return;
-
+    private void OnTriggerExit2D(Collider2D collision) {
+        if (collision.tag != "Rocket") return;
+        
         if (IsObstacle()) {
-
             DamageObstacle();
-
-        } else {
-            DestroyCube();
+            return;
         }
-
+         
+        if (IsCube()) {
+            DestroyCube();
+            return;
+        }
+        
+        if (IsRocket()) {
+            Vector3 position = transform.position;
+            RocketEffect.RocketDirection direction = type == CellItemType.HorizontalRocket ? 
+                RocketEffect.RocketDirection.Horizontal : 
+                RocketEffect.RocketDirection.Vertical;
+                
+            board?.RemoveItem(x, y);
+            EventManager.Instance?.TriggerRocketActivated(position, direction);
+        }
     }
 
-    private void OnMouseDown() { 
-        board?.TryBlast(x, y); 
+    private void OnMouseDown() {
+        if (!BoardManager.Instance.IsInteractable()) return;
+        
+        bool isMoveSpent = board?.TryBlast(x, y) ?? false; 
+
+        if (isMoveSpent) LevelManager.Instance.SpendMove();
     }
     
     public void Initialize(CellItemType type, int x, int y) {
@@ -115,7 +125,8 @@ public class CellItem : MonoBehaviour {
         if (IsObstacle()) return false;
 
         AnimationManager.Instance.PlayDestroyBlock(gameObject)
-            .setOnComplete(() => board.RemoveItem(X, Y));
+            .setOnComplete(() => board?.RemoveItem(x, y));
+            
         InstantiateParticleSystem();
         return true;
     }
@@ -126,7 +137,8 @@ public class CellItem : MonoBehaviour {
         health -= 1;
         
         if (health <= 0) {
-            board.RemoveItem(x, y);
+            LevelManager.Instance.DecreaseObstacleCount(type);
+            board?.RemoveItem(x, y);
             return true;
         }
 
@@ -138,18 +150,24 @@ public class CellItem : MonoBehaviour {
     }
     
     public void RenderOriginalSprite() {
-        if (IsObstacle() || spriteRenderer.sprite == originalSprite) return;
+        if (IsObstacle() || spriteRenderer == null || originalSprite == null || 
+            spriteRenderer.sprite == originalSprite) return;
+            
         spriteRenderer.sprite = originalSprite;
     }
 
     public void RenderRocketStateSprite() {
-        if (IsObstacle() || spriteRenderer.sprite == rocketStateSprite) return;
+        if (IsObstacle() || spriteRenderer == null || rocketStateSprite == null || 
+            spriteRenderer.sprite == rocketStateSprite) return;
+            
         spriteRenderer.sprite = rocketStateSprite;
         AnimationManager.Instance.PlaySwitchToRocketState(gameObject);
     }
 
     private void RenderDamagedVaseSprite() {
-        spriteRenderer.sprite = damagedSprite;
+        if (spriteRenderer != null && damagedSprite != null) {
+            spriteRenderer.sprite = damagedSprite;
+        }
     }
 
     public void InstantiateParticleSystem() {
@@ -161,7 +179,9 @@ public class CellItem : MonoBehaviour {
 
         if (particleSystem != null) {
             ParticleSystemRenderer renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
-            renderer.material.mainTexture = crackSprite.texture;
+            if (renderer != null && renderer.material != null) {
+                renderer.material.mainTexture = crackSprite.texture;
+            }
         
             particleSystem.Play();
             

@@ -106,6 +106,7 @@ public class GamePanel : MonoBehaviour {
             outerImage.sprite = boardSprite;
             outerImage.type = Image.Type.Sliced; 
             outerImage.raycastTarget = true; 
+            outerImage.color = new Color(1f, 1f, 1f, 0.8f);
         } else {
             outerImage.color = new Color(0.2f, 0.2f, 0.2f, 0.8f); 
         }

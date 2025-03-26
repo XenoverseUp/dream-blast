@@ -24,34 +24,28 @@ public class RocketEffect : MonoBehaviour {
     [SerializeField] private GameObject explosionPrefab;
     [SerializeField] private float explosionInterval = 0.1f;
     
-    private Vector3 partAInitialPosition;
-    private Vector3 partBInitialPosition;
-    private bool rocketActivated = false;
-    private List<Collider2D> hitColliders = new List<Collider2D>();
-    
-    private void Awake() {
-        SaveInitialPositions();
-    }
-    
-    private void SaveInitialPositions() {
-        if (rocketPartA != null) 
-            partAInitialPosition = rocketPartA.transform.localPosition;
-        
-        if (rocketPartB != null)
-            partBInitialPosition = rocketPartB.transform.localPosition;
-    }
-    
-    private void Start() {
-        rocketActivated = true;
+    private bool isActivated = false;
+
+    public void Activate() {
+        if (isActivated) return;
+
+        isActivated = true;
         Destroy(gameObject, destroyDelay);
 
-        
         if (explosionPrefab != null) {
             Instantiate(explosionPrefab, transform.position, Quaternion.identity);
             
-            StartCoroutine(SpawnExplosions(rocketPartA, Vector3.left));
-            StartCoroutine(SpawnExplosions(rocketPartB, Vector3.right));
+            StartCoroutine(SpawnExplosions(rocketPartA, GetDirectionVector(true)));
+            StartCoroutine(SpawnExplosions(rocketPartB, GetDirectionVector(false)));
         }
+    }
+    
+    private Vector3 GetDirectionVector(bool firstPart) {
+        return rocketDirection switch {
+            RocketDirection.Horizontal => firstPart ? Vector3.left : Vector3.right,
+            RocketDirection.Vertical => firstPart ? Vector3.up : Vector3.down,
+            _ => Vector3.zero,
+        };
     }
     
     private IEnumerator SpawnExplosions(GameObject rocketPart, Vector3 direction) {
@@ -77,37 +71,28 @@ public class RocketEffect : MonoBehaviour {
     }
     
     private void Update() {
-        if (rocketActivated) MoveRocketParts();
+        if (isActivated) MoveRocketParts();
+        
     }
     
     private void MoveRocketParts() {
-        if (rocketDirection == RocketDirection.Horizontal) {
-            Move(Vector3.left, rocketPartA, partAInitialPosition);
-            Move(Vector3.right, rocketPartB, partBInitialPosition);
-        } else {
-            Move(Vector3.up, rocketPartA, partAInitialPosition);
-            Move(Vector3.down, rocketPartB, partBInitialPosition);
-        }
+        Move(GetDirectionVector(true), rocketPartA);
+        Move(GetDirectionVector(false), rocketPartB);
     }
 
-    private void Move(Vector3 direction, GameObject rocketPart, Vector3 initialPos) {
+    private void Move(Vector3 direction, GameObject rocketPart) {
         if (rocketPart == null) return;
 
         Vector3 movement = direction * rocketPartSpeed * Time.deltaTime;
         rocketPart.transform.Translate(movement, Space.World);
         
         float distance = Vector3.Distance(rocketPart.transform.position, transform.position);
-        if (distance >= maxDistance) Destroy(rocketPart);
+        if (distance >= maxDistance) {
+            Destroy(rocketPart);
+        }
     }
     
     public void SetDirection(RocketDirection direction) {
         rocketDirection = direction;
     }
-    
-    public void AddHitCollider(Collider2D collider) {
-        if (!hitColliders.Contains(collider)) {
-            hitColliders.Add(collider);
-        }
-    }
 }
-

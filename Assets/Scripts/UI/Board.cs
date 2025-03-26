@@ -10,20 +10,18 @@ public class Board : MonoBehaviour {
     private float cellSize;
     private CellItem[,] grid;
     
-    private bool isFalling = false;
-
     /* Direction Constants */
     private static readonly Vector2Int[] ADJACENT_DIRECTIONS = new Vector2Int[] {
-        new(0, 1),
-        new(1, 0),
-        new(0, -1),
-        new(-1, 0)
+        new(0, 1),   // Up
+        new(1, 0),   // Right
+        new(0, -1),  // Down
+        new(-1, 0)   // Left
     };
 
     public int GridHeight => gridHeight;
     public int GridWidth => gridWidth;
 
-    /* Initialization */
+    /* Initialization & Destroy */
     public void Initialize(float cellSize) {
         this.cellSize = cellSize;
         this.gridWidth = LevelManager.Instance.GetLevelData().GridWidth;
@@ -32,6 +30,26 @@ public class Board : MonoBehaviour {
         InitializeGrid();
         blockFactory.Initialize(this, cellSize);
         PopulateGrid(LevelManager.Instance.GetLevelData().Grid);
+        
+        // Register for events
+        if (EventManager.Instance != null) {
+            EventManager.Instance.OnRocketChainTriggered += HandleRocketChain;
+        }
+    }
+
+
+    private void OnDestroy() {
+        if (EventManager.Instance != null) {
+            EventManager.Instance.OnRocketChainTriggered -= HandleRocketChain;
+        }
+        
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                if (grid[x, y] != null) {
+                    Destroy(grid[x, y].gameObject);
+                }
+            }
+        }
     }
 
     /* Grid Actions */
@@ -55,15 +73,36 @@ public class Board : MonoBehaviour {
             SpawnItemFromType(x, y, itemType);
         }
 
-        RenderRocketStateSprites();
+        UpdateRocketStateSprites();
+    }
+
+    public CellItem GetItem(int x, int y) {
+        if (!IsWithinGrid(x, y)) return null;
+        return grid[x, y];
     }
 
     public void RemoveItem(int x, int y) {
+        if (!IsWithinGrid(x, y)) return;
         if (grid[x, y] != null) {
             CellItem item = grid[x, y];
             Destroy(item.gameObject);
             grid[x, y] = null;
         }
+    }
+
+    public bool SetItem(int x, int y, CellItem item) {
+        if (!IsWithinGrid(x, y)) return false;
+        
+        if (grid[x, y] != null) {
+            RemoveItem(x, y);
+        }
+        
+        grid[x, y] = item;
+        if (item != null) {
+            item.SetPosition(x, y);
+        }
+        
+        return true;
     }
 
     private void SpawnItemFromType(int x, int y, string itemType) {
@@ -77,13 +116,13 @@ public class Board : MonoBehaviour {
 
     /* Blasting Mechanic */
     public bool TryBlast(int x, int y) {
-        if (isFalling) {
-            Debug.Log("Cannot blast while items are falling");
+        if (!BoardManager.Instance.IsInteractable()) {
+            Debug.Log("Board is currently locked");
             return false;
         }
         
-        if (grid[x, y] == null) {
-            Debug.Log("Cell is empty");
+        if (!IsWithinGrid(x, y) || grid[x, y] == null) {
+            Debug.Log("Invalid cell or empty");
             return false;
         }
         
@@ -95,25 +134,51 @@ public class Board : MonoBehaviour {
         }
 
         if (item.IsCube()) {
-            CellItemType itemType = item.GetItemType();
-            HashSet<CellItem> connectedCells = FindConnectedCells(x, y, itemType);
-            
-            if (connectedCells.Count < 2) {
-                AnimationManager.Instance.PlayInvalidBlast(item.gameObject);
-                return false;
-            }
-            
-            bool shouldCreateRocket = connectedCells.Count >= 4;
-            Vector2Int clickPosition = new(x, y);
-            
-            ProcessConnectedCubes(connectedCells, clickPosition, shouldCreateRocket, itemType);
-            return true;
+            return TryBlastCubes(x, y);
         } else if (item.IsRocket()) {
-            RocketSpawner.Instance.SpawnRocketFromCell(item);
-            return true;
+            return TryActivateRocket(x, y);
         }
         
         return false;
+    }
+    
+    private bool TryBlastCubes(int x, int y) {
+        CellItem item = grid[x, y];
+        CellItemType itemType = item.GetItemType();
+        HashSet<CellItem> connectedCells = FindConnectedCells(x, y, itemType);
+        
+        if (connectedCells.Count < 2) {
+            AnimationManager.Instance.PlayInvalidBlast(item.gameObject);
+            return false;
+        }
+        
+        bool shouldCreateRocket = connectedCells.Count >= 4;
+        Vector2Int clickPosition = new(x, y);
+        
+        ProcessConnectedCubes(connectedCells, clickPosition, shouldCreateRocket, itemType);
+        
+        BoardManager.Instance.SetState(BoardState.Processing);
+        
+        return true;
+    }
+    
+    private bool TryActivateRocket(int x, int y) {
+        List<Vector2Int> adjacentRockets = new(); //FindAdjacentRockets(x, y);
+        
+        if (adjacentRockets.Count > 0) {
+            EventManager.Instance?.TriggerRocketChainTriggered(x, y, adjacentRockets);
+        } else {
+            CellItemType itemType = grid[x, y].GetItemType();
+            RocketEffect.RocketDirection direction = itemType == CellItemType.HorizontalRocket ? 
+                RocketEffect.RocketDirection.Horizontal : 
+                RocketEffect.RocketDirection.Vertical;
+            
+            RemoveItem(x, y);
+            EventManager.Instance?.TriggerRocketActivated(GetWorldPosition(x, y), direction);
+        }
+        
+        BoardManager.Instance.SetState(BoardState.Processing);
+        return true;
     }
 
     private void ProcessConnectedCubes(HashSet<CellItem> connectedCells, Vector2Int clickPosition, bool createRocket, CellItemType sourceType) {
@@ -124,11 +189,6 @@ public class Board : MonoBehaviour {
             cell.InstantiateParticleSystem();
             CheckAndDamageAdjacentObstacles(cell.X, cell.Y, affectedObstacles);
         }
-
-        var (box, stone, vase) = GetObstacleCount();
-        
-        LevelManager.Instance.UpdateObstacleCountMap(box, stone, vase);
-        LevelManager.Instance.SpendMove();
         
         if (createRocket) {
             StartCoroutine(CreateRocketWithDelay(clickPosition.x, clickPosition.y, 0.3f));
@@ -138,7 +198,7 @@ public class Board : MonoBehaviour {
     }
 
     private IEnumerator CreateRocketWithDelay(int x, int y, float delay) {
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(delay);
         
         bool isHorizontal = Random.Range(0, 2) == 0;
         CellItemType rocketType = isHorizontal ? CellItemType.HorizontalRocket : CellItemType.VerticalRocket;
@@ -150,25 +210,72 @@ public class Board : MonoBehaviour {
             AnimationManager.Instance.PlayRocketCreation(rocketItem.gameObject);
         }
         
-        isFalling = true;
         yield return StartCoroutine(ProcessFallingItems());
-        isFalling = false;
+        EventManager.Instance?.TriggerFallingComplete();
+    }
 
-        RenderRocketStateSprites();
+    private void HandleRocketChain(int x, int y, List<Vector2Int> rocketPositions) {
+        StartCoroutine(CreateRocketCombo(x, y, rocketPositions));
+    }
+    
+    private IEnumerator CreateRocketCombo(int x, int y, List<Vector2Int> rocketPositions) {
+        Vector3 centerPos = GetWorldPosition(x, y);
+        
+        RemoveItem(x, y);
+        
+        foreach (Vector2Int pos in rocketPositions) {
+            RemoveItem(pos.x, pos.y);
+        }
+        
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                if (i == 0 && j == 0) continue; 
+                
+                int newX = x + i;
+                int newY = y + j;
+                
+                if (IsWithinGrid(newX, newY)) {
+                    Vector3 rocketPos = GetWorldPosition(newX, newY);
+                    
+                    RocketEffect.RocketDirection direction = (i + j) % 2 == 0 ? 
+                        RocketEffect.RocketDirection.Horizontal : 
+                        RocketEffect.RocketDirection.Vertical;
+                        
+                    yield return new WaitForSeconds(0.1f);
+                    EventManager.Instance?.TriggerRocketActivated(rocketPos, direction);
+                }
+            }
+        }
+        
+        yield return null;
+    }
+    
+    private List<Vector2Int> FindAdjacentRockets(int x, int y) {
+        List<Vector2Int> positions = new List<Vector2Int>();
+        
+        foreach (Vector2Int dir in ADJACENT_DIRECTIONS) {
+            int newX = x + dir.x;
+            int newY = y + dir.y;
+            
+            if (IsWithinGrid(newX, newY) && grid[newX, newY] != null && grid[newX, newY].IsRocket()) {
+                positions.Add(new Vector2Int(newX, newY));
+            }
+        }
+        
+        return positions;
     }
 
     /* Animations & New Block Spawning */
     public IEnumerator ProcessFallingItemsAfterDelay(float delay) {
         yield return new WaitForSeconds(delay);
         
-        isFalling = true;
+        BoardManager.Instance.SetState(BoardState.Falling);
         yield return StartCoroutine(ProcessFallingItems());
-        isFalling = false;
-
-        RenderRocketStateSprites();
+        
+        EventManager.Instance?.TriggerFallingComplete();
     }
     
-    private IEnumerator ProcessFallingItems() {
+    public IEnumerator ProcessFallingItems() {
         bool itemsMoved;
         
         do {
@@ -191,6 +298,7 @@ public class Board : MonoBehaviour {
         } while (itemsMoved);
         
         yield return StartCoroutine(SpawnNewCubesAtTop());
+        UpdateRocketStateSprites();
     }
 
     private IEnumerator AnimateExistingCubeFall(int fromX, int fromY, int toX, int toY) {
@@ -288,7 +396,7 @@ public class Board : MonoBehaviour {
         }
     }
 
-    private void RenderRocketStateSprites() {
+    public void UpdateRocketStateSprites() {
         HashSet<Vector2Int> visitedPositions = new HashSet<Vector2Int>();
 
         for (int x = 0; x < gridWidth; x++) {
@@ -307,17 +415,6 @@ public class Board : MonoBehaviour {
                     foreach (CellItem cell in connectedCells) cell.RenderRocketStateSprite();
                 else 
                     foreach (CellItem cell in connectedCells) cell.RenderOriginalSprite();
-                
-            }
-        }
-    }
-
-    private void OnDestroy() {
-        for (int x = 0; x < gridWidth; x++) {
-            for (int y = 0; y < gridHeight; y++) {
-                if (grid[x, y] != null) {
-                    Destroy(grid[x, y].gameObject);
-                }
             }
         }
     }
@@ -384,31 +481,6 @@ public class Board : MonoBehaviour {
         }
         
         return -1; // No item found that can fall
-    }
-
-    private (int box, int stone, int vase) GetObstacleCount() {
-        int box = 0, stone = 0, vase = 0;
-
-        for (int x = 0; x < gridWidth; x++) {
-            for (int y = 0; y < gridHeight; y++) {
-                CellItem item = grid[x, y];
-                if (item == null || !item.IsObstacle()) continue;
-
-                switch (item.GetItemType()) {
-                    case CellItemType.Box:
-                        box += 1;
-                        break;
-                    case CellItemType.Stone:
-                        stone += 1;
-                        break;
-                    case CellItemType.Vase:
-                        vase += 1;
-                        break;
-                }
-            }
-        }
-
-        return (box, stone, vase);
     }
 
     private HashSet<CellItem> FindConnectedCells(int startX, int startY, CellItemType targetType) {

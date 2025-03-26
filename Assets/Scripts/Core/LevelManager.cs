@@ -17,11 +17,10 @@ public class LevelManager : MonoBehaviour {
         if (Instance == null) {
             Instance = this;
         } else Destroy(gameObject);
-
-        loaded = LoadCurrentLevel();
     }
     
     private void Start() {
+        loaded = LoadCurrentLevel();
         if (!loaded) return;
         
         InitializeListeners();
@@ -76,14 +75,9 @@ public class LevelManager : MonoBehaviour {
         Notify();
     }
 
-    public void UpdateObstacleCountMap(int box, int stone, int vase) {
-        if (obstacleCountMap.ContainsKey(CellItemType.Box)) 
-            obstacleCountMap[CellItemType.Box] = box;
-            
-        if (obstacleCountMap.ContainsKey(CellItemType.Stone)) 
-            obstacleCountMap[CellItemType.Stone] = stone;
-        
-        if (obstacleCountMap.ContainsKey(CellItemType.Vase)) 
-            obstacleCountMap[CellItemType.Vase] = vase;
+    public void DecreaseObstacleCount(CellItemType type) {
+        if (!ItemTypeParserManager.Instance.IsObstacle(type)) return;
+        this.obstacleCountMap[type] -= 1;
+        Notify();
     }
 }

@@ -14,11 +14,11 @@ public class MoveText : MonoBehaviour, IActionListener {
         LevelManager.Instance.Unsubscribe(this);
     }
 
-
     public void OnAction(int moveCount, Dictionary<CellItemType, int> obstacles) {
-        if (textComponent != null) {
-            textComponent.SetText(moveCount.ToString());
-            AnimationManager.Instance.PlayUpdateText(textComponent.gameObject);
-        }
+        if (textComponent == null) return;
+        if (textComponent.text == moveCount.ToString()) return;
+
+        textComponent.SetText(moveCount.ToString());
+        AnimationManager.Instance.PlayUpdateText(textComponent.gameObject);
     }
 }
