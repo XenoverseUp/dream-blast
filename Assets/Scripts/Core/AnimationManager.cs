@@ -5,6 +5,8 @@ public class AnimationManager : MonoBehaviour {
 
     [SerializeField] public float blockShakeAmount = 15f;
     [SerializeField] public float blockFallSpeed = 7.5f;
+    [SerializeField] public float blockSpawnDelay = 0.1f;
+    [SerializeField] public float rocketStateUpdateDelay = 0f;
 
     public delegate void OnCompleteCallback();
 
@@ -38,7 +40,7 @@ public class AnimationManager : MonoBehaviour {
         LeanTween.cancel(gameObject);
 
         Vector3 originalScale = gameObject.transform.localScale;
-        gameObject.transform.localScale = 1.15f * originalScale;
+        gameObject.transform.localScale = 1.05f * originalScale;
 
         return LeanTween.scale(gameObject, originalScale, 0.1f)
             .setOnComplete(() => {

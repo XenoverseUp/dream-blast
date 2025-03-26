@@ -1,36 +1,56 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class GamePanel : MonoBehaviour {
-    [SerializeField] private Sprite boardSprite;   
+    [SerializeField] private Sprite boardSprite;  
 
-    [Header("Block Sprites")]
-    [SerializeField] private Sprite redCubeSprite;
-    [SerializeField] private Sprite greenCubeSprite;
-    [SerializeField] private Sprite blueCubeSprite;
-    [SerializeField] private Sprite yellowCubeSprite;
+    [Serializable]
+    private struct BlockSprites {
+        public Sprite redCube;
+        public Sprite greenCube;
+        public Sprite blueCube;
+        public Sprite yellowCube;
+    };
 
-    [Header("Obstacle Sprites")]
-    [SerializeField] private Sprite boxSprite;
-    [SerializeField] private Sprite stoneSprite;
-    [SerializeField] private Sprite vaseSprite;
-    [SerializeField] private Sprite damagedVaseSprite;
+    [Serializable]
+    private struct BlockRocketStateSprites {
+        public Sprite redCubeRocket;
+        public Sprite greenCubeRocket;
+        public Sprite blueCubeRocket;
+        public Sprite yellowCubeRocket;
+    };
+    
+    [Serializable]
+    private struct ObstacleSprites {
+        public Sprite box;
+        public Sprite stone;
+        public Sprite vase;
+        public Sprite damagedVase;
+    };
+    
+    [Serializable]
+    private struct ArtifactSprites {
+        public Sprite horizontalRocket;
+        public Sprite verticalRocket;
+    };
 
-    [Header("Artifact Forming Block Sprites")]
-    [SerializeField] private Sprite redCubeRocketSprite;
-    [SerializeField] private Sprite greenCubeRocketSprite;
-    [SerializeField] private Sprite blueCubeRocketSprite;
-    [SerializeField] private Sprite yellowCubeRocketSprite;
+    [Serializable]
+    private struct CrackSprites {
+        public Sprite redCrack;
+        public Sprite greenCrack;
+        public Sprite blueCrack;
+        public Sprite yellowCrack;
+    };
 
-    [Header("Artifact Sprites")]
-    [SerializeField] private Sprite horizontalRocketSprite;
-    [SerializeField] private Sprite verticalRocketSprite;
+ 
 
-    [Header("Block Cracks")]
-    [SerializeField] private Sprite redCrack;
-    [SerializeField] private Sprite greenCrack;
-    [SerializeField] private Sprite blueCrack;
-    [SerializeField] private Sprite yellowCrack;
+    [Header("Sprites")]
+    [SerializeField] private BlockSprites blockSprites;
+    [SerializeField] private BlockRocketStateSprites rocketStateSprites;
+    [SerializeField] private ObstacleSprites obstacleSprites;
+    [SerializeField] private ArtifactSprites artifactSprites;
+    [SerializeField] private CrackSprites crackSprites;
 
     [Header("Effects")]
     [SerializeField] private GameObject particleSystemPrefab;
@@ -107,33 +127,36 @@ public class GamePanel : MonoBehaviour {
         BlockFactory blockFactory = boardPanel.AddComponent<BlockFactory>();
        
         blockFactory.SetBlockSprites(
-            redCubeSprite,
-            greenCubeSprite,
-            blueCubeSprite,
-            yellowCubeSprite
+            blockSprites.redCube,
+            blockSprites.greenCube,
+            blockSprites.blueCube,
+            blockSprites.yellowCube
         );
 
         blockFactory.SetRocketStateSprites(
-            redCubeRocketSprite,
-            greenCubeRocketSprite,
-            blueCubeRocketSprite,
-            yellowCubeRocketSprite
+            rocketStateSprites.redCubeRocket,
+            rocketStateSprites.greenCubeRocket,
+            rocketStateSprites.blueCubeRocket,
+            rocketStateSprites.yellowCubeRocket
         );
 
-        blockFactory.SetRocketSprites(horizontalRocketSprite, verticalRocketSprite);
+        blockFactory.SetRocketSprites(
+            artifactSprites.horizontalRocket, 
+            artifactSprites.verticalRocket
+        );
 
         blockFactory.SetObstacleSprites(
-            boxSprite,
-            stoneSprite,
-            vaseSprite,
-            damagedVaseSprite
+            obstacleSprites.box,
+            obstacleSprites.stone,
+            obstacleSprites.vase,
+            obstacleSprites.damagedVase
         );
 
         blockFactory.SetCrackSprites(
-            redCrack, 
-            greenCrack, 
-            blueCrack,
-            yellowCrack
+            crackSprites.redCrack, 
+            crackSprites.greenCrack, 
+            crackSprites.blueCrack,
+            crackSprites.yellowCrack
         );
     
         blockFactory.SetParticleSystemPrefab(particleSystemPrefab);

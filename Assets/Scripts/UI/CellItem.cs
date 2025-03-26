@@ -33,18 +33,33 @@ public class CellItem : MonoBehaviour {
     
     private void Awake() {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        BoxCollider2D collider = gameObject.AddComponent<BoxCollider2D>();        
+        collider.size = new Vector2(1f, 1.15f);
+        collider.offset = new Vector2(0f, -0.15f);
+        collider.isTrigger = true;
     }
     
     private void Start() {
         board = GetComponentInParent<Board>();
         blockFactory = GetComponentInParent<BlockFactory>();
+    }
 
-        BoxCollider2D collider = gameObject.AddComponent<BoxCollider2D>();        
-        collider.size = new Vector2(1f, 1.15f);
-        collider.offset = new Vector2(0f, -0.15f);
+    private void OnTriggerEnter2D(Collider2D collision) {
+        HandleRocketHit();
+    }
+
+    private void HandleRocketHit() {
+        if (board == null) return;
+
+        if (IsObstacle()) {
+
+            DamageObstacle();
+
+        } else {
+            DestroyCube();
+        }
 
     }
-    
 
     private void OnMouseDown() { 
         board?.TryBlast(x, y); 
@@ -95,11 +110,25 @@ public class CellItem : MonoBehaviour {
     public bool CanFall() {
         return IsCube() || IsRocket() || type == CellItemType.Vase;
     }
+
+    public bool DestroyCube() {
+        if (IsObstacle()) return false;
+
+        AnimationManager.Instance.PlayDestroyBlock(gameObject)
+            .setOnComplete(() => board.RemoveItem(X, Y));
+        InstantiateParticleSystem();
+        return true;
+    }
     
-    public bool TakeDamage() {
+    public bool DamageObstacle() {
+        if (!IsObstacle()) return false;
+
         health -= 1;
         
-        if (health <= 0) return true;
+        if (health <= 0) {
+            board.RemoveItem(x, y);
+            return true;
+        }
 
         if (type == CellItemType.Vase && damagedSprite != null && spriteRenderer != null) {
             RenderDamagedVaseSprite();

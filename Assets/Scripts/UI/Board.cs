@@ -58,7 +58,7 @@ public class Board : MonoBehaviour {
         RenderRocketStateSprites();
     }
 
-    private void RemoveItem(int x, int y) {
+    public void RemoveItem(int x, int y) {
         if (grid[x, y] != null) {
             CellItem item = grid[x, y];
             Destroy(item.gameObject);
@@ -109,8 +109,8 @@ public class Board : MonoBehaviour {
             ProcessConnectedCubes(connectedCells, clickPosition, shouldCreateRocket, itemType);
             return true;
         } else if (item.IsRocket()) {
-            Debug.Log("Rocket clicked - functionality will be implemented later");
-            return false;
+            RocketSpawner.Instance.SpawnRocketFromCell(item);
+            return true;
         }
         
         return false;
@@ -158,7 +158,7 @@ public class Board : MonoBehaviour {
     }
 
     /* Animations & New Block Spawning */
-    private IEnumerator ProcessFallingItemsAfterDelay(float delay) {
+    public IEnumerator ProcessFallingItemsAfterDelay(float delay) {
         yield return new WaitForSeconds(delay);
         
         isFalling = true;
@@ -186,7 +186,7 @@ public class Board : MonoBehaviour {
                 }
             }
                           
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSeconds(AnimationManager.Instance.blockSpawnDelay);
             
         } while (itemsMoved);
         
@@ -226,7 +226,7 @@ public class Board : MonoBehaviour {
             yield return coroutine;
         }
         
-        if (cubesAdded) yield return new WaitForSeconds(0.3f);
+        if (cubesAdded) yield return new WaitForSeconds(AnimationManager.Instance.rocketStateUpdateDelay);
     }
     
     private IEnumerator AnimateColumnFall(int x, List<int> emptyCellsToFill) {
@@ -281,8 +281,7 @@ public class Board : MonoBehaviour {
                         
                         processedObstacles.Add(obstaclePos);
                         
-                        bool destroyed = adjacentItem.TakeDamage();
-                        if (destroyed) RemoveItem(newX, newY);
+                        adjacentItem.DamageObstacle();
                     }
                 }
             }
