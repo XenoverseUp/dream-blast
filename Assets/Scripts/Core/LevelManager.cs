@@ -28,7 +28,7 @@ public class LevelManager : MonoBehaviour {
     }
     
     private bool LoadCurrentLevel() {
-        int levelNumber = GameManager.Instance.currentLevel;
+        int levelNumber = GameManager.Instance.CurrentLevel;
         levelData = LevelData.LoadLevel(levelNumber);
         
         if (levelData == null) {

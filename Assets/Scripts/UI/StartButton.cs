@@ -37,8 +37,8 @@ public class StartButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         if (textComponent == null)
             Debug.LogError($"No TMP_Text found in children of {gameObject.name}.");
         
-        if (GameManager.Instance.HasFinished()) SetText(finishText);
-        else SetText(levelText.Replace("#", GameManager.Instance.currentLevel.ToString()));
+        if (GameManager.Instance.IsGameCompleted) SetText(finishText);
+        else SetText(levelText.Replace("#", GameManager.Instance.CurrentLevel.ToString()));
     }
 
     public void OnPointerDown(PointerEventData eventData) {
@@ -91,7 +91,7 @@ public class StartButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     }
 
     private void OnButtonClick() {
-        if (!GameManager.Instance.HasFinished())
+        if (!GameManager.Instance.IsGameCompleted)
             LevelTransition.Instance.SetActiveScene(ActiveScene.Level);
     }
 
