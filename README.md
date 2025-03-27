@@ -86,3 +86,5 @@ The project includes a custom Unity editor menu for:
 ## Credits
 
 Developed as part of the Dream Games Software Engineering Study.
+
+Muhammed Can Durmus, Koc University
