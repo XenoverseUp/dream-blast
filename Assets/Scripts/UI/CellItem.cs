@@ -137,7 +137,6 @@ public class CellItem : MonoBehaviour {
         health -= 1;
         
         if (health <= 0) {
-            LevelManager.Instance.DecreaseObstacleCount(type);
             board?.RemoveItem(x, y);
             return true;
         }

@@ -12,10 +12,10 @@ public class Board : MonoBehaviour {
     
     /* Direction Constants */
     private static readonly Vector2Int[] ADJACENT_DIRECTIONS = new Vector2Int[] {
-        new(0, 1),   // Up
-        new(1, 0),   // Right
-        new(0, -1),  // Down
-        new(-1, 0)   // Left
+        new(0, 1), 
+        new(1, 0), 
+        new(0, -1),
+        new(-1, 0) 
     };
 
     public int GridHeight => gridHeight;
@@ -31,16 +31,14 @@ public class Board : MonoBehaviour {
         blockFactory.Initialize(this, cellSize);
         PopulateGrid(LevelManager.Instance.GetLevelData().Grid);
         
-        // Register for events
         if (EventManager.Instance != null) {
-            EventManager.Instance.OnRocketChainTriggered += HandleRocketChain;
+            EventManager.Instance.OnBoardUnlocked += OnBoardUnlocked;
         }
     }
 
-
     private void OnDestroy() {
         if (EventManager.Instance != null) {
-            EventManager.Instance.OnRocketChainTriggered -= HandleRocketChain;
+            EventManager.Instance.OnBoardUnlocked -= OnBoardUnlocked;
         }
         
         for (int x = 0; x < gridWidth; x++) {
@@ -50,6 +48,11 @@ public class Board : MonoBehaviour {
                 }
             }
         }
+    }
+
+    private void  OnBoardUnlocked() {
+        var (box, stone, vase) = GetObstacleCount();
+        LevelManager.Instance.UpdateObstacleCountMap(box, stone, vase);
     }
 
     /* Grid Actions */
@@ -93,14 +96,11 @@ public class Board : MonoBehaviour {
     public bool SetItem(int x, int y, CellItem item) {
         if (!IsWithinGrid(x, y)) return false;
         
-        if (grid[x, y] != null) {
+        if (grid[x, y] != null) 
             RemoveItem(x, y);
-        }
         
         grid[x, y] = item;
-        if (item != null) {
-            item.SetPosition(x, y);
-        }
+        item?.SetPosition(x, y);
         
         return true;
     }
@@ -163,10 +163,10 @@ public class Board : MonoBehaviour {
     }
     
     private bool TryActivateRocket(int x, int y) {
-        List<Vector2Int> adjacentRockets = new(); //FindAdjacentRockets(x, y);
+        List<Vector2Int> adjacentRockets = FindAdjacentRockets(x, y);
         
         if (adjacentRockets.Count > 0) {
-            EventManager.Instance?.TriggerRocketChainTriggered(x, y, adjacentRockets);
+            OnRocketChainTriggered(x, y, adjacentRockets);
         } else {
             CellItemType itemType = grid[x, y].GetItemType();
             RocketEffect.RocketDirection direction = itemType == CellItemType.HorizontalRocket ? 
@@ -214,7 +214,7 @@ public class Board : MonoBehaviour {
         EventManager.Instance?.TriggerFallingComplete();
     }
 
-    private void HandleRocketChain(int x, int y, List<Vector2Int> rocketPositions) {
+    private void OnRocketChainTriggered(int x, int y, List<Vector2Int> rocketPositions) {
         StartCoroutine(CreateRocketCombo(x, y, rocketPositions));
     }
     
@@ -224,26 +224,30 @@ public class Board : MonoBehaviour {
         RemoveItem(x, y);
         
         foreach (Vector2Int pos in rocketPositions) {
-            RemoveItem(pos.x, pos.y);
+            AnimationManager.Instance.PlayDestroyBlock(grid[pos.x, pos.y].gameObject).setOnComplete(() => RemoveItem(pos.x, pos.y));
         }
+
+        EventManager.Instance?.TriggerRocketActivated(centerPos, RocketEffect.RocketDirection.Horizontal);
+        EventManager.Instance?.TriggerRocketActivated(centerPos, RocketEffect.RocketDirection.Vertical);
         
-        for (int i = -1; i <= 1; i++) {
-            for (int j = -1; j <= 1; j++) {
-                if (i == 0 && j == 0) continue; 
+        Vector2Int[] plusShape = new Vector2Int[] {
+            new(-1, 0), new(1, 0),
+            new(0, -1), new(0, 1)
+        };
+        
+        
+        foreach (Vector2Int offset in plusShape) {
+            int newX = x + offset.x;
+            int newY = y + offset.y;
+            
+            if (IsWithinGrid(newX, newY)) {
+                Vector3 rocketPos = GetWorldPosition(newX, newY);
                 
-                int newX = x + i;
-                int newY = y + j;
-                
-                if (IsWithinGrid(newX, newY)) {
-                    Vector3 rocketPos = GetWorldPosition(newX, newY);
+                RocketEffect.RocketDirection direction = offset.y == 0 ? 
+                    RocketEffect.RocketDirection.Vertical : 
+                    RocketEffect.RocketDirection.Horizontal;
                     
-                    RocketEffect.RocketDirection direction = (i + j) % 2 == 0 ? 
-                        RocketEffect.RocketDirection.Horizontal : 
-                        RocketEffect.RocketDirection.Vertical;
-                        
-                    yield return new WaitForSeconds(0.1f);
-                    EventManager.Instance?.TriggerRocketActivated(rocketPos, direction);
-                }
+                EventManager.Instance?.TriggerRocketActivated(rocketPos, direction);
             }
         }
         
@@ -517,5 +521,30 @@ public class Board : MonoBehaviour {
         }
         
         return connectedCubes;
+    }
+
+    private (int box, int stone, int vase) GetObstacleCount() {
+        int box = 0, stone = 0, vase = 0;
+
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                CellItem item = grid[x, y];
+                if (item == null || !item.IsObstacle()) continue;
+
+                switch (item.GetItemType()) {
+                    case CellItemType.Box:
+                        box += 1;
+                        break;
+                    case CellItemType.Stone:
+                        stone += 1;
+                        break;
+                    case CellItemType.Vase:
+                        vase += 1;
+                        break;
+                }
+            }
+        }
+
+        return (box, stone, vase);
     }
 }

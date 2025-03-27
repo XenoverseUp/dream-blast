@@ -75,6 +75,14 @@ public class LevelManager : MonoBehaviour {
         Notify();
     }
 
+    public void UpdateObstacleCountMap(int box, int stone, int vase) {
+        if (obstacleCountMap.ContainsKey(CellItemType.Box)) obstacleCountMap[CellItemType.Box] = box;
+        if (obstacleCountMap.ContainsKey(CellItemType.Stone)) obstacleCountMap[CellItemType.Stone] = stone;
+        if (obstacleCountMap.ContainsKey(CellItemType.Vase)) obstacleCountMap[CellItemType.Vase] = vase;
+
+        Notify();
+    }
+
     public void DecreaseObstacleCount(CellItemType type) {
         if (!ItemTypeParserManager.Instance.IsObstacle(type)) return;
         this.obstacleCountMap[type] -= 1;

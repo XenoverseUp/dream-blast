@@ -39,8 +39,9 @@ public class BoardManager : MonoBehaviour {
     
     private void Start() {
         if (EventManager.Instance != null) {
-            EventManager.Instance.OnRocketActivated += EnqueueRocket;
+            EventManager.Instance.OnRocketActivated += OnRocketActivated;
             EventManager.Instance.OnFallingComplete += OnFallingComplete;
+
         }
     }
     
@@ -56,26 +57,17 @@ public class BoardManager : MonoBehaviour {
     
     public void SetState(BoardState newState) {
         if (newState == currentState) return;
-        
-        BoardState previousState = currentState;
         currentState = newState;
-        
-        switch (newState) {
-            case BoardState.Ready:
-                EventManager.Instance?.TriggerBoardUnlocked();
-                break;
-            case BoardState.Processing:
-            case BoardState.Falling:
-                EventManager.Instance?.TriggerBoardLocked();
-                break;
+
+        if (newState == BoardState.Ready) {
+            EventManager.Instance?.TriggerBoardUnlocked();
         }
     }
     
-    private void EnqueueRocket(Vector3 position, RocketEffect.RocketDirection direction) {
+    private void OnRocketActivated(Vector3 position, RocketEffect.RocketDirection direction) {
         rocketQueue.Enqueue(new RocketActivationData(position, direction));
         
-        if (currentState == BoardState.Ready) 
-            SetState(BoardState.Processing);
+        if (currentState == BoardState.Ready) SetState(BoardState.Processing);
         
         waitingForChainedRockets = true;
         
@@ -108,7 +100,7 @@ public class BoardManager : MonoBehaviour {
             
             Board board = FindFirstObjectByType<Board>();
             if (board != null) {
-                yield return StartCoroutine(board.ProcessFallingItemsAfterDelay(0f));
+                yield return StartCoroutine(board.ProcessFallingItemsAfterDelay(AnimationManager.Instance.blockSpawnDelay));
             }
         }
     }
@@ -119,7 +111,7 @@ public class BoardManager : MonoBehaviour {
     
     private void OnDestroy() {
         if (EventManager.Instance != null) {
-            EventManager.Instance.OnRocketActivated -= EnqueueRocket;
+            EventManager.Instance.OnRocketActivated -= OnRocketActivated;
             EventManager.Instance.OnFallingComplete -= OnFallingComplete;
         }
         
