@@ -3649,3 +3649,11 @@ Memory consumption went from 136.1 MB to 130.4 MB.
 Total: 7.312417 ms (FindLiveObjects: 0.366500 ms CreateObjectMapping: 0.220959 ms MarkObjects: 4.226125 ms  DeleteObjects: 2.498167 ms)
 
 Prepare: number of updated asset objects reloaded= 0
+========================================================================
+Received Import Request.
+  Time since last request: 2279.792951 seconds.
+  path: Assets/Scripts/Core/AnimationManager.cs
+  artifactKey: Guid(c732ef613667144698f239807d03a954) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scripts/Core/AnimationManager.cs using Guid(c732ef613667144698f239807d03a954) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'f351a2950c8c6cb4b515946f5f6cd262') in 0.009367916 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
+
