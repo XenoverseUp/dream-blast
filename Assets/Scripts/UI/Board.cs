@@ -166,7 +166,7 @@ public class Board : MonoBehaviour {
         List<Vector2Int> adjacentRockets = FindAdjacentRockets(x, y);
         
         if (adjacentRockets.Count > 0) {
-            OnRocketChainTriggered(x, y, adjacentRockets);
+            StartCoroutine(CreateRocketCombo(x, y, adjacentRockets));
         } else {
             CellItemType itemType = grid[x, y].GetItemType();
             RocketEffect.RocketDirection direction = itemType == CellItemType.HorizontalRocket ? 
@@ -213,10 +213,6 @@ public class Board : MonoBehaviour {
         yield return StartCoroutine(ProcessFallingItems());
         EventManager.Instance?.TriggerFallingComplete();
     }
-
-    private void OnRocketChainTriggered(int x, int y, List<Vector2Int> rocketPositions) {
-        StartCoroutine(CreateRocketCombo(x, y, rocketPositions));
-    }
     
     private IEnumerator CreateRocketCombo(int x, int y, List<Vector2Int> rocketPositions) {
         Vector3 centerPos = GetWorldPosition(x, y);
@@ -234,7 +230,6 @@ public class Board : MonoBehaviour {
             new(-1, 0), new(1, 0),
             new(0, -1), new(0, 1)
         };
-        
         
         foreach (Vector2Int offset in plusShape) {
             int newX = x + offset.x;

@@ -81,11 +81,10 @@ public class LevelManager : MonoBehaviour {
         if (obstacleCountMap.ContainsKey(CellItemType.Vase)) obstacleCountMap[CellItemType.Vase] = vase;
 
         Notify();
-    }
 
-    public void DecreaseObstacleCount(CellItemType type) {
-        if (!ItemTypeParserManager.Instance.IsObstacle(type)) return;
-        this.obstacleCountMap[type] -= 1;
-        Notify();
+        if (box + stone + vase == 0) {
+            LevelTransition.Instance.SetActiveScene(ActiveScene.MainMenu);
+            GameManager.Instance.NextLevel();
+        }
     }
 }

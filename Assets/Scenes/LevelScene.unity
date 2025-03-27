@@ -570,6 +570,14 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7508456319664943222, guid: e52ee7de208b2496c94e4b38b0004488, type: 3}
+      propertyPath: mainSceneName
+      value: MainScene
+      objectReference: {fileID: 0}
+    - target: {fileID: 7508456319664943222, guid: e52ee7de208b2496c94e4b38b0004488, type: 3}
+      propertyPath: levelSceneName
+      value: LevelScene
+      objectReference: {fileID: 0}
+    - target: {fileID: 7508456319664943222, guid: e52ee7de208b2496c94e4b38b0004488, type: 3}
       propertyPath: transitionDuration
       value: 0.5
       objectReference: {fileID: 0}

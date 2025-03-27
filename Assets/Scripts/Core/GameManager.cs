@@ -24,4 +24,12 @@ public class GameManager : MonoBehaviour {
         } else Destroy(gameObject);
         
     }
+
+    public void NextLevel() {
+        this.currentLevel += 1;
+    }
+
+    public bool HasFinished() {
+        return this.currentLevel == this.maxLevel + 1;
+    }
 }

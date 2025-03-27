@@ -17,8 +17,6 @@ public class StartButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     [SerializeField] private float pressDuration = 0.03f; 
     [SerializeField] private float releaseDuration = 0.1f;
 
-    public LevelLoader levelLoader;
-
     private Button button;
     private TMP_Text textComponent;
     private Vector3 originalScale;
@@ -39,10 +37,8 @@ public class StartButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         if (textComponent == null)
             Debug.LogError($"No TMP_Text found in children of {gameObject.name}.");
         
-        if (GameManager.Instance.currentLevel == GameManager.Instance.maxLevel)
-            SetText(finishText);
-        else
-            SetText(levelText.Replace("#", GameManager.Instance.currentLevel.ToString()));
+        if (GameManager.Instance.HasFinished()) SetText(finishText);
+        else SetText(levelText.Replace("#", GameManager.Instance.currentLevel.ToString()));
     }
 
     public void OnPointerDown(PointerEventData eventData) {
@@ -95,7 +91,8 @@ public class StartButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     }
 
     private void OnButtonClick() {
-        levelLoader.SetActiveScene(ActiveScene.Level);
+        if (!GameManager.Instance.HasFinished())
+            LevelTransition.Instance.SetActiveScene(ActiveScene.Level);
     }
 
     private void SetText(string text) { textComponent.SetText(text); }

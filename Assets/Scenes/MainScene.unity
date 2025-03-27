@@ -476,17 +476,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &675344049 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7508456319664943222, guid: e52ee7de208b2496c94e4b38b0004488, type: 3}
-  m_PrefabInstance: {fileID: 6575329727680172169}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: decc8fcd3f4fc461f8d5967cd94c4e1f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &955907916
 GameObject:
   m_ObjectHideFlags: 0
@@ -847,7 +836,6 @@ MonoBehaviour:
   pressedScale: 0.95
   pressDuration: 0.05
   releaseDuration: 0.2
-  levelLoader: {fileID: 675344049}
 --- !u!1 &1305414125
 GameObject:
   m_ObjectHideFlags: 0
@@ -1030,7 +1018,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7758536657207529589, guid: e52ee7de208b2496c94e4b38b0004488, type: 3}
       propertyPath: m_Name
-      value: LevelLoader
+      value: LevelTransition
       objectReference: {fileID: 0}
     - target: {fileID: 7797694048666524027, guid: e52ee7de208b2496c94e4b38b0004488, type: 3}
       propertyPath: m_LocalPosition.x
