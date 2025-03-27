@@ -136,7 +136,10 @@ public class CellItem : MonoBehaviour {
         health -= 1;
         
         if (health <= 0) {
-            board?.RemoveItem(x, y);
+            AnimationManager.Instance.PlayDestroyBlock(gameObject)
+                .setOnComplete(() => board?.RemoveItem(x, y));
+            
+            InstantiateParticleSystem();
             return true;
         }
 

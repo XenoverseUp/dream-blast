@@ -44,11 +44,22 @@ public class BlockFactory : MonoBehaviour {
         this.damagedVaseSprite = damagedVase;
     }
     
-    public void SetCrackSprites(Sprite redCrack, Sprite greenCrack, Sprite blueCrack, Sprite yellowCrack) {
+    public void SetCrackSprites(
+        Sprite redCrack, 
+        Sprite greenCrack, 
+        Sprite blueCrack, 
+        Sprite yellowCrack,
+        Sprite boxCrack,
+        Sprite stoneCrack,
+        Sprite vaseCrack
+    ) {
         crackSprites[CellItemType.RedCube] = redCrack;
         crackSprites[CellItemType.GreenCube] = greenCrack;
         crackSprites[CellItemType.BlueCube] = blueCrack;
         crackSprites[CellItemType.YellowCube] = yellowCrack;
+        crackSprites[CellItemType.Box] = boxCrack;
+        crackSprites[CellItemType.Stone] = stoneCrack;
+        crackSprites[CellItemType.Vase] = vaseCrack;
     }
 
     public void SetRocketSprites(Sprite horizontalRocket, Sprite verticalRocket) {
@@ -89,8 +100,11 @@ public class BlockFactory : MonoBehaviour {
         Sprite rocketStateSprite = null;
         
         if (ItemTypeParserManager.Instance.IsCube(type)) {
-            crackSprite = crackSprites[type];
             rocketStateSprite = rocketStateSprites[type];
+        }
+
+        if (ItemTypeParserManager.Instance.IsCube(type) || ItemTypeParserManager.Instance.IsObstacle(type) ) {
+            crackSprite = crackSprites[type];
         }
         
         Vector3 position = isNewCube ? board.GetWorldPosition(x, board.GridHeight) : board.GetLocalPosition(x, y);

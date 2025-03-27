@@ -41,6 +41,9 @@ public class GamePanel : MonoBehaviour {
         public Sprite greenCrack;
         public Sprite blueCrack;
         public Sprite yellowCrack;
+        public Sprite boxCrack;
+        public Sprite stoneCrack;
+        public Sprite vaseCrack;
     };
 
  
@@ -71,6 +74,16 @@ public class GamePanel : MonoBehaviour {
         
         float cellSize = this.CalculateOptimalGridSize();
         this.CreateBoard(cellSize);
+        BoardManager.Instance.SetState(BoardState.Ready);
+    }
+
+    public void Reset() {
+        Destroy(boardPanel);
+        Destroy(outerPanel);
+
+        float cellSize = this.CalculateOptimalGridSize();
+        this.CreateBoard(cellSize);
+        BoardManager.Instance.SetState(BoardState.Ready);
     }
 
     private float CalculateOptimalGridSize() {
@@ -157,7 +170,10 @@ public class GamePanel : MonoBehaviour {
             crackSprites.redCrack, 
             crackSprites.greenCrack, 
             crackSprites.blueCrack,
-            crackSprites.yellowCrack
+            crackSprites.yellowCrack,
+            crackSprites.boxCrack,
+            crackSprites.stoneCrack,
+            crackSprites.vaseCrack
         );
     
         blockFactory.SetParticleSystemPrefab(particleSystemPrefab);

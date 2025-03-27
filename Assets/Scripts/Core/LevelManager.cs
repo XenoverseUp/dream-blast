@@ -4,14 +4,13 @@ using UnityEngine;
 public class LevelManager : MonoBehaviour {
     public static LevelManager Instance { get; private set; }
 
-    [SerializeField] private List<MonoBehaviour> listenerObjects = new List<MonoBehaviour>();
+    [SerializeField] private GameObject popup;
 
     private List<IActionListener> listeners = new List<IActionListener>();
     
     private int moveCount = 0;
     private LevelData levelData;
     private Dictionary<CellItemType, int> obstacleCountMap = new Dictionary<CellItemType, int>();
-    private bool loaded = false;
     
     private void Awake() {
         if (Instance == null) {
@@ -20,11 +19,11 @@ public class LevelManager : MonoBehaviour {
     }
     
     private void Start() {
-        loaded = LoadCurrentLevel();
-        if (!loaded) return;
-        
-        InitializeListeners();
-        Notify();
+        LoadCurrentLevel();
+    }
+
+    public void Reset() {
+        LoadCurrentLevel();
     }
     
     private bool LoadCurrentLevel() {
@@ -39,16 +38,11 @@ public class LevelManager : MonoBehaviour {
         moveCount = levelData.MoveCount;
         obstacleCountMap = levelData.GetObstacleCountMap();
 
+        Notify();
+
         return true;
     }
 
-    private void InitializeListeners() {
-        foreach (MonoBehaviour obj in listenerObjects) {
-            if (obj is IActionListener listener) listeners.Add(listener);
-            else Debug.LogWarning($"Object {obj.name} does not implement IActionListener interface.");
-        }
-    }
-    
     private void Notify() {
         foreach (IActionListener listener in listeners) listener.OnAction(moveCount, obstacleCountMap);
     }
@@ -70,8 +64,18 @@ public class LevelManager : MonoBehaviour {
 
     public LevelData GetLevelData() { return this.levelData; }
 
+    public bool HasMove() {
+        return this.moveCount >= 0;
+    }
+
     public void SpendMove() {
         this.moveCount -= 1;
+
+        if (moveCount < 0) {
+            popup.SetActive(true);
+            BoardManager.Instance.SetState(BoardState.GameOver);
+        }
+        
         Notify();
     }
 

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class AnimationManager : MonoBehaviour {
     public static AnimationManager Instance { get; private set; }
@@ -7,6 +8,14 @@ public class AnimationManager : MonoBehaviour {
     [SerializeField] public float blockFallSpeed = 7.5f;
     [SerializeField] public float blockSpawnDelay = 0.1f;
     [SerializeField] public float rocketStateUpdateDelay = 0f;
+    
+    [Header("Popup Animation Settings")]
+    [SerializeField] public float fadeInDuration = 0.3f;
+    [SerializeField] public float popupSlideDuration = 0.5f;
+    [SerializeField] public float popupDelay = 0.3f;
+    [SerializeField] public float overlayMaxAlpha = 0.7f;
+    [SerializeField] public LeanTweenType fadeEase = LeanTweenType.easeOutQuad;
+    [SerializeField] public LeanTweenType slideEase = LeanTweenType.easeOutBack;
 
     public delegate void OnCompleteCallback();
 
@@ -15,6 +24,48 @@ public class AnimationManager : MonoBehaviour {
         else Destroy(gameObject);
     }
 
+    #region Popup Animations
+    
+    public void AnimatePopupIn(Image overlayImage, RectTransform popupBackground, Vector2 popupTargetPosition, OnCompleteCallback callback = null) {
+        LeanTween.value(overlayImage.gameObject, 0f, overlayMaxAlpha, fadeInDuration)
+            .setEase(fadeEase)
+            .setOnUpdate((float value) => {
+                Color newColor = overlayImage.color;
+                newColor.a = value;
+                overlayImage.color = newColor;
+            });
+        
+        LeanTween.delayedCall(popupDelay, () => {
+            LeanTween.move(popupBackground, popupTargetPosition, popupSlideDuration)
+                .setEase(slideEase)
+                .setOnComplete(() => {
+                    callback?.Invoke();
+                });
+        });
+    }
+    
+    public void AnimatePopupOut(Image overlayImage, RectTransform popupBackground, Vector2 popupStartPosition, OnCompleteCallback callback = null) {
+        LeanTween.move(popupBackground, popupStartPosition, popupSlideDuration * 0.7f)
+            .setEase(LeanTweenType.easeInBack);
+        
+        LeanTween.delayedCall(popupDelay, () => {
+            LeanTween.value(overlayImage.gameObject, overlayImage.color.a, 0f, fadeInDuration)
+                .setEase(fadeEase)
+                .setOnUpdate(value => {
+                    Color newColor = overlayImage.color;
+                    newColor.a = value;
+                    overlayImage.color = newColor;
+                })
+                .setOnComplete(() => {
+                    callback?.Invoke();
+                });
+        });
+    }
+    
+    #endregion
+
+    #region Game Item Animations
+    
     public LTDescr PlayRocketCreation(GameObject rocketObject, OnCompleteCallback callback = null) {
         if (rocketObject == null) return null;
         
@@ -143,12 +194,15 @@ public class AnimationManager : MonoBehaviour {
 
         return duration;        
     }
+    
+    #endregion
 
+    #region Utility Methods
+    
     private Vector3 LerpWithoutClamp(Vector3 a, Vector3 b, float t) { 
         return a + (b - a) * t; 
     }
     
-    /* Easing Functions */
     public float EaseOutBack(float t) {
         float s = 1.70158f;
         return (t - 1) * (t - 1) * ((s + 1) * (t - 1) + s) + 1;
@@ -164,4 +218,6 @@ public class AnimationManager : MonoBehaviour {
         
         return Mathf.Pow(2, -10 * t) * Mathf.Sin((t - 0.1f) * 5 * Mathf.PI) + 1;
     }
+    
+    #endregion
 }

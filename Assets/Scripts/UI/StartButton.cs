@@ -42,15 +42,17 @@ public class StartButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     }
 
     public void OnPointerDown(PointerEventData eventData) {
+        if (GameManager.Instance.IsGameCompleted) return;
+        
         isPressed = true;
         AnimateToPressed();
     }
 
     public void OnPointerUp(PointerEventData eventData) {
-        if (isPressed) {
-            isPressed = false;
-            AnimateToNormal();
-        }
+        if (!isPressed) return;
+        
+        isPressed = false;
+        AnimateToNormal();
     }
 
     public void OnPointerExit(PointerEventData eventData) { 

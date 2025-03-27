@@ -373,7 +373,7 @@ MonoBehaviour:
   rocketDirection: 1
   rocketPartA: {fileID: 3829235320387619511}
   rocketPartB: {fileID: 1853192514097959399}
-  rocketPartSpeed: 10
+  rocketPartSpeed: 14
   maxDistance: 25
   destroyDelay: 2
   explosionPrefab: {fileID: 0}

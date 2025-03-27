@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Board : MonoBehaviour {
+    #region Fields
     private BlockFactory blockFactory;
     
     private int gridWidth;
@@ -17,11 +18,14 @@ public class Board : MonoBehaviour {
         new(0, -1),
         new(-1, 0) 
     };
+    #endregion
 
+    #region Properties
     public int GridHeight => gridHeight;
     public int GridWidth => gridWidth;
+    #endregion
 
-    /* Initialization & Destroy */
+    #region Initialization & Destroy
     public void Initialize(float cellSize) {
         this.cellSize = cellSize;
         this.gridWidth = LevelManager.Instance.GetLevelData().GridWidth;
@@ -54,8 +58,9 @@ public class Board : MonoBehaviour {
         var (box, stone, vase) = GetObstacleCount();
         LevelManager.Instance.UpdateObstacleCountMap(box, stone, vase);
     }
+    #endregion
 
-    /* Grid Actions */
+    #region Grid Actions
     private void InitializeGrid() {
         grid = new CellItem[gridWidth, gridHeight];
 
@@ -113,8 +118,9 @@ public class Board : MonoBehaviour {
             grid[x, y] = itemComponent;
         }
     }
+    #endregion
 
-    /* Blasting Mechanic */
+    #region Blasting Mechanic
     public bool TryBlast(int x, int y) {
         if (!BoardManager.Instance.IsInteractable()) {
             Debug.Log("Board is currently locked");
@@ -263,15 +269,18 @@ public class Board : MonoBehaviour {
         
         return positions;
     }
+    #endregion
 
-    /* Animations & New Block Spawning */
+    #region Animations & New Block Spawning
     public IEnumerator ProcessFallingItemsAfterDelay(float delay) {
         yield return new WaitForSeconds(delay);
         
         BoardManager.Instance.SetState(BoardState.Falling);
         yield return StartCoroutine(ProcessFallingItems());
-        
-        EventManager.Instance?.TriggerFallingComplete();
+
+        if (LevelManager.Instance.HasMove()) {
+            EventManager.Instance?.TriggerFallingComplete();
+        }
     }
     
     public IEnumerator ProcessFallingItems() {
@@ -417,8 +426,9 @@ public class Board : MonoBehaviour {
             }
         }
     }
+    #endregion
 
-    /* Helper Methods */
+    #region Helper Methods
     private bool IsWithinGrid(int x, int y) {
         return x >= 0 && x < gridWidth && y >= 0 && y < gridHeight;
     }
@@ -542,4 +552,5 @@ public class Board : MonoBehaviour {
 
         return (box, stone, vase);
     }
+    #endregion
 }

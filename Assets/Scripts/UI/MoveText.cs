@@ -17,6 +17,7 @@ public class MoveText : MonoBehaviour, IActionListener {
     public void OnAction(int moveCount, Dictionary<CellItemType, int> obstacles) {
         if (textComponent == null) return;
         if (textComponent.text == moveCount.ToString()) return;
+        if (moveCount < 0) return;
 
         textComponent.SetText(moveCount.ToString());
         AnimationManager.Instance.PlayUpdateText(textComponent.gameObject);
