@@ -11,7 +11,6 @@ Dream Blast is a matching puzzle game with the following key features:
 - Special rockets that can be created and combined
 - Various obstacles to clear (boxes, stones, and vases)
 - Persistent level progress
-- Celebration animations for level completion
 - Fail screen with retry options
 
 ## Gameplay Mechanics
@@ -61,7 +60,7 @@ Assets/
 
 ## Setup Instructions
 
-1. Clone the repository
+1. Clone the repository: `git clone https://github.com/XenoverseUp/dream-blast`
 2. Open the project in Unity 6000.0.32f1 or later
 3. Open the MainScene to start the game
 4. Play the game in the Unity Editor
@@ -73,14 +72,7 @@ The game includes 10 predefined levels with increasing difficulty. Each level is
 - Move count
 - Initial grid layout with different items
 
-## Custom Editor Tools
-
-The project includes a custom Unity editor menu for:
-- Setting the player's current level
-- Testing specific level configurations
-
 ## Dependencies
-
 - LeanTween
 
 ## Credits
